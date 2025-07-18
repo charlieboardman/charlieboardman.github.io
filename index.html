@@ -2,86 +2,121 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Camera → PDF → POST</title>
+  <title>Camera‑to‑PDF Uploader</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body {font-family:sans-serif;margin:2rem;line-height:1.4}
-    #log {white-space:pre-wrap;font-size:.9rem;margin-top:1rem}
-    button {margin-top:1rem;padding:.5rem 1rem;font-size:1rem}
+    body{font-family:sans-serif;margin:1rem;line-height:1.4}
+    video,canvas{max-width:100%;border:1px solid #ccc;border-radius:6px}
+    #thumbs img{width:5rem;margin:.25rem;border:1px solid #999;border-radius:4px}
+    button{margin:.5rem .25rem;padding:.6rem 1rem;font-size:.95rem}
+    #log{white-space:pre-wrap;font-size:.85rem;margin-top:.5rem}
   </style>
 </head>
 <body>
-  <h1>Scan &amp; Send</h1>
+  <h2>Scan multi‑page PDF &amp; upload</h2>
 
-  <!-- ① take one or many photos -->
-  <input id="images" type="file" accept="image/*" capture="environment" multiple><br>
-  <button id="uploadBtn" disabled>Generate PDF & Upload</button>
+  <!-- live camera feed -->
+  <video id="vid" playsinline autoplay></video><br>
+
+  <!-- action buttons -->
+  <button id="snapBtn">📸 Capture page</button>
+  <button id="sendBtn" disabled>📤 Finish & Upload</button>
+  <span id="count">0 page(s)</span>
+
+  <!-- thumbnails -->
+  <div id="thumbs"></div>
 
   <div id="log"></div>
 
-  <!-- pdf-lib (≈90 kB gzipped) -->
+  <!-- pdf‑lib -->
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script>
-    (function () {
-      /* ********  adjust this  ******** */
+    (async () => {
+      /* ************  adjust this  ************ */
       const POST_URL = 'https://example.com/receive';
-      /* ******************************** */
+      /* **************************************** */
 
-      const input = document.getElementById('images');
-      const btn   = document.getElementById('uploadBtn');
+      const vid   = document.getElementById('vid');
+      const snap  = document.getElementById('snapBtn');
+      const send  = document.getElementById('sendBtn');
+      const count = document.getElementById('count');
+      const thumbs= document.getElementById('thumbs');
       const logEl = document.getElementById('log');
-      let files   = [];
 
-      const log = msg => (logEl.textContent += msg + '\n');
+      let stream, trackSettings;
+      let pages = [];        // Array<Uint8Array> (JPEG bytes)
 
-      input.addEventListener('change', () => {
-        files = [...input.files];
-        btn.disabled = !files.length;
-        log(`Selected ${files.length} image(s).`);
-      });
+      const log = t => (logEl.textContent += t + '\n');
 
-      btn.addEventListener('click', async () => {
-        if (!files.length) return;
+      /* ---- start camera ---- */
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {facingMode: 'environment'}
+        });
+        vid.srcObject = stream;
+        trackSettings = stream.getVideoTracks()[0].getSettings();
+      } catch (e) {
+        alert('Camera access failed: ' + e.message);
+        return;
+      }
 
+      /* ---- capture still frame ---- */
+      snap.onclick = async () => {
+        const {width:w, height:h} = trackSettings;
+        const canvas = Object.assign(document.createElement('canvas'), {width:w, height:h});
+        canvas.getContext('2d').drawImage(vid, 0, 0, w, h);
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.85));
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        pages.push(bytes);
+
+        // thumb UI
+        const img = new Image();
+        img.src = URL.createObjectURL(blob);
+        thumbs.appendChild(img);
+
+        count.textContent = pages.length + ' page(s)';
+        send.disabled = false;
+      };
+
+      /* ---- build PDF & upload ---- */
+      send.onclick = async () => {
+        send.disabled = true;
         try {
           log('Building PDF …');
-          const pdfBytes = await makePdf(files);
-          log(`PDF: ${(pdfBytes.length/1024).toFixed(1)} kB`);
+          const pdfBytes = await buildPdf(pages);
+          log(`PDF size: ${(pdfBytes.length/1024).toFixed(1)} kB`);
 
-          log('Encoding Base64 …');
-          const base64 = uint8ToBase64(pdfBytes);
+          log('Base‑64 encoding …');
+          const b64 = uint8ToBase64(pdfBytes);
 
           log('POSTing …');
-          const r = await fetch(POST_URL, {
+          const res = await fetch(POST_URL, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({pdfBase64: base64})
+            body: JSON.stringify({pdfBase64: b64})
           });
-          log(`Server responded: ${r.status}`);
+          log('Server replied ' + res.status);
         } catch (e) {
-          console.error(e);
           log('Error: ' + e.message);
+        } finally {
+          send.disabled = false;
         }
-      });
+      };
 
       /* ---------- helpers ---------- */
 
-      async function makePdf(imageFiles) {
+      async function buildPdf(jpegPages){
         const pdf = await PDFLib.PDFDocument.create();
-        for (const f of imageFiles) {
-          const bytes = await f.arrayBuffer();
-          const img = f.type === 'image/png'
-            ? await pdf.embedPng(bytes)
-            : await pdf.embedJpg(bytes);
-          const page = pdf.addPage([img.width, img.height]);
-          page.drawImage(img, {x:0, y:0, width:img.width, height:img.height});
+        for (const bytes of jpegPages){
+          const img  = await pdf.embedJpg(bytes);
+          const page = pdf.addPage([img.width,img.height]);
+          page.drawImage(img,{x:0,y:0,width:img.width,height:img.height});
         }
-        return await pdf.save(); // Uint8Array
+        return await pdf.save();  // Uint8Array
       }
 
-      function uint8ToBase64(u8) {
-        let bin = '';
-        for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+      function uint8ToBase64(u8){
+        let bin=''; for(let i=0;i<u8.length;i++) bin+=String.fromCharCode(u8[i]);
         return btoa(bin);
       }
     })();
