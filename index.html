@@ -1,125 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Camera‑to‑PDF Uploader</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
-    body{font-family:sans-serif;margin:1rem;line-height:1.4}
-    video,canvas{max-width:100%;border:1px solid #ccc;border-radius:6px}
-    #thumbs img{width:5rem;margin:.25rem;border:1px solid #999;border-radius:4px}
-    button{margin:.5rem .25rem;padding:.6rem 1rem;font-size:.95rem}
-    #log{white-space:pre-wrap;font-size:.85rem;margin-top:.5rem}
-  </style>
+<meta charset="utf-8">
+<title>Scan → PDF → Upload</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+ body{font-family:sans-serif;margin:1rem} video{max-width:100%;
+ border:1px solid #ccc;border-radius:6px}
+ #thumbs img{width:5rem;margin:.25rem;border:1px solid #888;border-radius:4px}
+ button{margin:.5rem .25rem;padding:.55rem 1rem;font-size:1rem}
+ #log{white-space:pre-wrap;font-size:.85rem;margin-top:.5rem}
+</style>
 </head>
 <body>
-  <h2>Scan multi‑page PDF &amp; upload</h2>
+<h2>Multi‑page scanner</h2>
 
-  <!-- live camera feed -->
-  <video id="vid" playsinline autoplay></video><br>
+<video id="cam" autoplay playsinline muted></video><br>
+<button id="snap">📸 Capture page</button>
+<button id="send" disabled>📤 Finish & Upload</button>
+<span id="count">0 page(s)</span>
 
-  <!-- action buttons -->
-  <button id="snapBtn">📸 Capture page</button>
-  <button id="sendBtn" disabled>📤 Finish & Upload</button>
-  <span id="count">0 page(s)</span>
+<div id="thumbs"></div>
+<div id="log"></div>
 
-  <!-- thumbnails -->
-  <div id="thumbs"></div>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script>
+(async () => {
+  /* ------------------ adjust nothing below ------------------ */
+  const POST_URL = 'https://192.168.0.222:8000/upload';
+  const vid =      document.getElementById('cam');
+  const snapBtn =  document.getElementById('snap');
+  const sendBtn =  document.getElementById('send');
+  const countEl =  document.getElementById('count');
+  const thumbs =   document.getElementById('thumbs');
+  const logEl =    document.getElementById('log');
+  const pages=[];  const log=t=>logEl.textContent+=t+'\n';
 
-  <div id="log"></div>
+  /* start camera */
+  try{
+    vid.srcObject = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    await new Promise(r=>vid.onloadedmetadata=r);
+  }catch(e){alert('Camera error: '+e.message);return;}
 
-  <!-- pdf‑lib -->
-  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script>
-    (async () => {
-      /* ************  adjust this  ************ */
-      const POST_URL = 'http://192.168.0.222:8000/upload';
-      /* **************************************** */
+  /* capture */
+  snapBtn.onclick = async () =>{
+    const w=vid.videoWidth, h=vid.videoHeight;
+    const c=new OffscreenCanvas(w,h); c.getContext('2d').drawImage(vid,0,0,w,h);
+    const blob=await c.convertToBlob({type:'image/jpeg',quality:0.85});
+    pages.push(new Uint8Array(await blob.arrayBuffer()));
 
-      const vid   = document.getElementById('vid');
-      const snap  = document.getElementById('snapBtn');
-      const send  = document.getElementById('sendBtn');
-      const count = document.getElementById('count');
-      const thumbs= document.getElementById('thumbs');
-      const logEl = document.getElementById('log');
+    const img=new Image(); img.src=URL.createObjectURL(blob); thumbs.appendChild(img);
+    countEl.textContent=pages.length+' page(s)'; sendBtn.disabled=false;
+  };
 
-      let stream, trackSettings;
-      let pages = [];        // Array<Uint8Array> (JPEG bytes)
+  /* build‑pdf & upload */
+  sendBtn.onclick=async ()=>{
+    sendBtn.disabled=true;
+    try{
+      const pdf = await (async()=>{const d=await PDFLib.PDFDocument.create();
+        for(const b of pages){const i=await d.embedJpg(b);
+          const p=d.addPage([i.width,i.height]);p.drawImage(i,{x:0,y:0,width:i.width,height:i.height});}
+        return new Uint8Array(await d.save());
+      })();
+      log('PDF '+(pdf.length/1024).toFixed(1)+' kB');
+      const b64=btoa(String.fromCharCode(...pdf));
 
-      const log = t => (logEl.textContent += t + '\n');
-
-      /* ---- start camera ---- */
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {facingMode: 'environment'}
-        });
-        vid.srcObject = stream;
-        trackSettings = stream.getVideoTracks()[0].getSettings();
-      } catch (e) {
-        alert('Camera access failed: ' + e.message);
-        return;
-      }
-
-      /* ---- capture still frame ---- */
-      snap.onclick = async () => {
-        const {width:w, height:h} = trackSettings;
-        const canvas = Object.assign(document.createElement('canvas'), {width:w, height:h});
-        canvas.getContext('2d').drawImage(vid, 0, 0, w, h);
-        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.85));
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        pages.push(bytes);
-
-        // thumb UI
-        const img = new Image();
-        img.src = URL.createObjectURL(blob);
-        thumbs.appendChild(img);
-
-        count.textContent = pages.length + ' page(s)';
-        send.disabled = false;
-      };
-
-      /* ---- build PDF & upload ---- */
-      send.onclick = async () => {
-        send.disabled = true;
-        try {
-          log('Building PDF …');
-          const pdfBytes = await buildPdf(pages);
-          log(`PDF size: ${(pdfBytes.length/1024).toFixed(1)} kB`);
-
-          log('Base‑64 encoding …');
-          const b64 = uint8ToBase64(pdfBytes);
-
-          log('POSTing …');
-          const res = await fetch(POST_URL, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({pdfBase64: b64})
-          });
-          log('Server replied ' + res.status);
-        } catch (e) {
-          log('Error: ' + e.message);
-        } finally {
-          send.disabled = false;
-        }
-      };
-
-      /* ---------- helpers ---------- */
-
-      async function buildPdf(jpegPages){
-        const pdf = await PDFLib.PDFDocument.create();
-        for (const bytes of jpegPages){
-          const img  = await pdf.embedJpg(bytes);
-          const page = pdf.addPage([img.width,img.height]);
-          page.drawImage(img,{x:0,y:0,width:img.width,height:img.height});
-        }
-        return await pdf.save();  // Uint8Array
-      }
-
-      function uint8ToBase64(u8){
-        let bin=''; for(let i=0;i<u8.length;i++) bin+=String.fromCharCode(u8[i]);
-        return btoa(bin);
-      }
-    })();
-  </script>
+      const r=await fetch(POST_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+                 body:JSON.stringify({pdfBase64:b64})});
+      log('Server replied '+r.status);
+    }catch(e){log('❗ '+e.message);}finally{sendBtn.disabled=false;}
+  };
+})();
+</script>
 </body>
 </html>
