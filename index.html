@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera → PDF → POST</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body {font-family:sans-serif;margin:2rem;line-height:1.4}
+    #log {white-space:pre-wrap;font-size:.9rem;margin-top:1rem}
+    button {margin-top:1rem;padding:.5rem 1rem;font-size:1rem}
+  </style>
+</head>
+<body>
+  <h1>Scan &amp; Send</h1>
+
+  <!-- ① take one or many photos -->
+  <input id="images" type="file" accept="image/*" capture="environment" multiple><br>
+  <button id="uploadBtn" disabled>Generate PDF & Upload</button>
+
+  <div id="log"></div>
+
+  <!-- pdf-lib (≈90 kB gzipped) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script>
+    (function () {
+      /* ********  adjust this  ******** */
+      const POST_URL = 'https://example.com/receive';
+      /* ******************************** */
+
+      const input = document.getElementById('images');
+      const btn   = document.getElementById('uploadBtn');
+      const logEl = document.getElementById('log');
+      let files   = [];
+
+      const log = msg => (logEl.textContent += msg + '\n');
+
+      input.addEventListener('change', () => {
+        files = [...input.files];
+        btn.disabled = !files.length;
+        log(`Selected ${files.length} image(s).`);
+      });
+
+      btn.addEventListener('click', async () => {
+        if (!files.length) return;
+
+        try {
+          log('Building PDF …');
+          const pdfBytes = await makePdf(files);
+          log(`PDF: ${(pdfBytes.length/1024).toFixed(1)} kB`);
+
+          log('Encoding Base64 …');
+          const base64 = uint8ToBase64(pdfBytes);
+
+          log('POSTing …');
+          const r = await fetch(POST_URL, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({pdfBase64: base64})
+          });
+          log(`Server responded: ${r.status}`);
+        } catch (e) {
+          console.error(e);
+          log('Error: ' + e.message);
+        }
+      });
+
+      /* ---------- helpers ---------- */
+
+      async function makePdf(imageFiles) {
+        const pdf = await PDFLib.PDFDocument.create();
+        for (const f of imageFiles) {
+          const bytes = await f.arrayBuffer();
+          const img = f.type === 'image/png'
+            ? await pdf.embedPng(bytes)
+            : await pdf.embedJpg(bytes);
+          const page = pdf.addPage([img.width, img.height]);
+          page.drawImage(img, {x:0, y:0, width:img.width, height:img.height});
+        }
+        return await pdf.save(); // Uint8Array
+      }
+
+      function uint8ToBase64(u8) {
+        let bin = '';
+        for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+        return btoa(bin);
+      }
+    })();
+  </script>
+</body>
+</html>
