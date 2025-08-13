@@ -84,7 +84,7 @@
 					log(`ZIP loaded! It contains ${Object.keys(zip.files).length} files`)
 					for (let cfdi_n = 0; cfdi_n < (Object.keys(zip.files).length); cfdi_n++) {	
 						const fileName = Object.keys(zip.files)[cfdi_n]
-						log(`	Processing: ${filename}`)
+						log(`	Processing: ${fileName}`)
 
 						const zipEntry = zip.files[fileName]
 						zipEntry.async('text').then(function(xmlContent) {
