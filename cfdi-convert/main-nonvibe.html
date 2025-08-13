@@ -70,8 +70,15 @@
             logDiv.textContent += message+ '\n'           
         }
 
-		convertBtn.addEventListener('click', function() {
-			log('Button was clicked!');
+		convertBtn.addEventListener('click', function() { //When the convert button is pressed
+			const files = fileInput.files //Grab the files that were inserted into the input
+			log('Selected ${files.length} files')	
+
+			for (let i = 0; i < files.length: i++) {
+				const file = files[i]
+				log('File ${i + 1}: $file.name}')
+			}			
+		
 		});
 	</script>
 
