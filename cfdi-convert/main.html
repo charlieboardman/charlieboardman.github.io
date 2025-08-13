@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CFDI (ZIP of XML) → XLSX</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 2rem;
+      max-width: 900px;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    .row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    #log {
+      white-space: pre-wrap;
+      background: #f6f6f6;
+      padding: 1rem;
+      border-radius: 8px;
+      max-height: 40vh;
+      overflow: auto;
+    }
+    button {
+      padding: 0.6rem 1rem;
+    }
+    .muted {
+      color: #666;
+    }
+    progress {
+      width: 100%;
+      height: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CFDI ZIP → XLSX Converter (client-side)</h1>
+  <p class="muted">
+    Drop or select one or more <strong>.zip</strong> files (each containing
+    CFDI XMLs). Nothing leaves your browser.
+  </p>
+
+  <div class="row">
+    <input id="fileInput" type="file" accept=".zip" multiple />
+    <button id="convertBtn">Convert to XLSX</button>
+  </div>
+
+  <p class="muted">Progress</p>
+  <progress id="prog" max="100" value="0"></progress>
+
+  <h3>Log</h3>
+  <div id="log"></div>
+
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <!-- “?umd” gives the full SheetJS API on the global XLSX object -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js?umd"></script>
+
+  <script>
+    /* ---------- tiny helpers ---------- */
+    const log = (msg) => {
+      const el = document.getElementById("log");
+      el.textContent += msg + "\n";
+      el.scrollTop = el.scrollHeight;
+    };
+    const get1 = (parent, ns, tag) =>
+      parent.getElementsByTagNameNS(ns, tag)[0] || null;
+    const getAttr = (node, a) => (node && node.getAttribute(a)) || "";
+
+    /* ---------- CFDI XML → JS object ---------- */
+    function parseCFDI(xmlText) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlText, "application/xml");
+      const parseError = doc.querySelector("parsererror");
+      if (parseError) throw new Error(parseError.textContent || "XML parse error");
+
+      const root = doc.documentElement; // Comprobante
+      const ns = root.namespaceURI || "http://www.sat.gob.mx/cfd/4";
+
+      const comprobante = root;
+      const emisor = get1(doc, ns, "Emisor");
+      const receptor = get1(doc, ns, "Receptor");
+
+      const conceptos = Array.from(doc.getElementsByTagNameNS(ns, "Concepto"));
+      const descriptions = conceptos
+        .map((c) => getAttr(c, "Descripcion"))
+        .filter(Boolean);
+      const fecha = getAttr(comprobante, "Fecha") || "";
+      const [fecha_d = "", hora = ""] = fecha.includes("T")
+        ? fecha.split("T")
+        : [];
+
+      return {
+        serie: getAttr(comprobante, "Serie"),
+        folio: getAttr(comprobante, "Folio"),
+        fecha: fecha_d,
+        hora,
+        subtotal: getAttr(comprobante, "SubTotal"),
+        descuento: getAttr(comprobante, "Descuento"),
+        total: getAttr(comprobante, "Total"),
+        moneda: getAttr(comprobante, "Moneda"),
+        tipo_comprobante: getAttr(comprobante, "TipoDeComprobante"),
+        metodo_pago: getAttr(comprobante, "MetodoPago"),
+        forma_pago: getAttr(comprobante, "FormaPago"),
+        lugar_expedicion: getAttr(comprobante, "LugarExpedicion"),
+
+        emisor_rfc: getAttr(emisor, "Rfc"),
+        emisor_nombre: getAttr(emisor, "Nombre"),
+        emisor_regimen_fiscal: getAttr(emisor, "RegimenFiscal"),
+
+        receptor_rfc: getAttr(receptor, "Rfc"),
+        receptor_nombre: getAttr(receptor, "Nombre"),
+        receptor_domicilio_fiscal: getAttr(receptor, "DomicilioFiscalReceptor"),
+        receptor_regimen_fiscal: getAttr(receptor, "RegimenFiscalReceptor"),
+        receptor_uso_cfdi: getAttr(receptor, "UsoCFDI"),
+
+        all_descriptions: descriptions.join(" | "),
+        num_line_items: conceptos.length,
+      };
+    }
+
+    /* ---------- ZIP handling ---------- */
+    async function readZipFile(file) {
+      const zip = await JSZip.loadAsync(file);
+      const xmlEntries = Object.values(zip.files).filter((f) => !f.dir);
+      const rows = [];
+
+      for (const ent of xmlEntries) {
+        try {
+          const xmlText = await ent.async("string");
+          rows.push(parseCFDI(xmlText));
+        } catch (e) {
+          log(`Error parsing "${ent.name}" in ${file.name}: ${e.message}`);
+        }
+      }
+      return rows;
+    }
+
+    /* ---------- rows → workbook + download ---------- */
+    function rowsToWorkbook(rows) {
+      const headers = [
+        "serie",
+        "folio",
+        "fecha",
+        "hora",
+        "subtotal",
+        "descuento",
+        "total",
+        "moneda",
+        "tipo_comprobante",
+        "metodo_pago",
+        "forma_pago",
+        "lugar_expedicion",
+        "emisor_rfc",
+        "emisor_nombre",
+        "emisor_regimen_fiscal",
+        "receptor_rfc",
+        "receptor_nombre",
+        "receptor_domicilio_fiscal",
+        "receptor_regimen_fiscal",
+        "receptor_uso_cfdi",
+        "all_descriptions",
+        "num_line_items",
+      ];
+
+      const data =
+        rows.length === 0
+          ? [headers]
+          : [headers, ...rows.map((r) => headers.map((h) => r[h] ?? ""))];
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "CFDI");
+      return wb;
+    }
+
+    function downloadWorkbook(wb, filename) {
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], {
+        type:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ---------- main orchestration ---------- */
+    async function convert(files) {
+      const prog = document.getElementById("prog");
+      log(`Selected ${files.length} zip file(s).`);
+
+      const allRows = [];
+      let processed = 0;
+
+      for (const f of files) {
+        log(`Reading zip: ${f.name}`);
+        try {
+          const rows = await readZipFile(f);
+          allRows.push(...rows);
+          log(`  → ${rows.length} XML parsed from ${f.name}`);
+        } catch (e) {
+          log(`Failed to read ${f.name}: ${e.message}`);
+        }
+        processed++;
+        prog.value = Math.round((processed / files.length) * 100);
+      }
+
+      log(`Total rows: ${allRows.length}`);
+      downloadWorkbook(rowsToWorkbook(allRows), "facturas.xlsx");
+      log(`Saved facturas.xlsx (${allRows.length} row(s)).`);
+    }
+
+    /* ---------- UI wiring ---------- */
+    document
+      .getElementById("convertBtn")
+      .addEventListener("click", async () => {
+        try {
+          const input = document.getElementById("fileInput");
+          const files = Array.from(input.files || []);
+          if (!files.length) {
+            alert("Select one or more .zip files first.");
+            return;
+          }
+          document.getElementById("log").textContent = "";
+          document.getElementById("prog").value = 0;
+          await convert(files);
+        } catch (e) {
+          log("🔴 " + e.message);
+          console.error(e);
+        }
+      });
+
+    /* drag & drop (optional) */
+    document.addEventListener("dragover", (e) => e.preventDefault());
+    document.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const dt = e.dataTransfer;
+      if (!dt || !dt.files) return;
+      const zips = Array.from(dt.files).filter((f) =>
+        f.name.toLowerCase().endsWith(".zip")
+      );
+      if (!zips.length) return;
+
+      const input = document.getElementById("fileInput");
+      const dataTransfer = new DataTransfer();
+      for (const f of input.files ? Array.from(input.files) : [])
+        dataTransfer.items.add(f);
+      for (const z of zips) dataTransfer.items.add(z);
+      input.files = dataTransfer.files;
+
+      log(`Added ${zips.length} file(s) via drag & drop.`);
+    });
+  </script>
+</body>
+</html>
