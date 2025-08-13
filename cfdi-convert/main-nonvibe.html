@@ -74,15 +74,27 @@
 			const files = fileInput.files //Grab the files that were inserted into the input
 			log(`Selected ${files.length} files`)	
 
-			for (let i = 0; i < files.length; i++) {
+			for (let i = 0; i < files.length; i++) { //Loop through
 				const file = files[i]
 				log(`File ${i + 1}: ${file.name}`)
 			
 
 				log(`Reading ${file.name}...`)
 				JSZip.loadAsync(file).then(function(zip) {
-					log(`ZIP loaded! It contains ${Object.keys(zip.files).length} files`)			
-			}
+					log(`ZIP loaded! It contains ${Object.keys(zip.files).length} files`)
+					for (let cfdi_n = 0; cfdi_n < (Object.keys(zip.files).length); cfdi_n++) {	
+						const fileName = Object.keys(zip.files)[cfdi_n]
+						log(`	Processing: ${filename}`)
+
+						const zipEntry = zip.files[fileName]
+						zipEntry.async('text').then(function(xmlContent) {
+							log(`		Got XML content, length: ${xmlContent.length} characters`)
+						})
+
+					}
+				})
+			}			
+			
 		});
 	</script>
 
