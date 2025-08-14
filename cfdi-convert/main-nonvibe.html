@@ -65,30 +65,60 @@
         const fileInput = document.getElementById('fileInput') //Get the file input element
         const convertBtn = document.getElementById('convertBtn') //Get the convert button
         const logDiv = document.getElementById('log') //Get the log area of the page
+		const allFacturas = [] //This will hold the rows which are then written to the spreadsheet file
 
         function log(message) {
             logDiv.textContent += message+ '\n'           
         }
 
 		convertBtn.addEventListener('click', function() { //When the convert button is pressed
-			const files = fileInput.files //Grab the files that were inserted into the input
-			log(`Selected ${files.length} files`)	
+			const zipFiles = fileInput.files //Grab the zip files that were inserted into the input box
+			log(`Selected ${zipFiles.length} files`)
 
-			for (let i = 0; i < files.length; i++) { //Loop through
-				const file = files[i]
-				log(`File ${i + 1}: ${file.name}`)
-			
+			for (let i = 0; i < zipFiles.length; i++) { //Loop through the zip files
+				const file = zipFiles[i]
+				log(`Zip file ${i + 1}: ${file.name}`)
 
 				log(`Reading ${file.name}...`)
 				JSZip.loadAsync(file).then(function(zip) {
 					log(`ZIP loaded! It contains ${Object.keys(zip.files).length} files`)
-					for (let cfdi_n = 0; cfdi_n < (Object.keys(zip.files).length); cfdi_n++) {	
+					for (let cfdi_n = 0; cfdi_n < (Object.keys(zip.files).length); cfdi_n++) {	//Loop through each XML file inside the zip file
 						const fileName = Object.keys(zip.files)[cfdi_n]
 						log(`	Processing: ${fileName}`)
 
 						const zipEntry = zip.files[fileName]
 						zipEntry.async('text').then(function(xmlContent) {
 							log(`		Got XML content, length: ${xmlContent.length} characters`)
+
+							// Parse XML string into DOM
+							const parser = new DOMParser()
+							const xmlDoc = parser.parseFromString(xmlContent, 'application/xml')
+							
+							const parseError = xmlDoc.querySelector('parsererror')
+							if (parseError) {
+								log(` XML PARSE ERROR: ${parseError.textContent}`)
+								return
+							}
+							
+							log(`		Parsed XML document, root element: ${xmlDoc.documentElement.tagName}`)
+							
+							var root = xmlDoc.documentElement
+							window.debugRoot = root //Remove this for prod
+							log(` Set window.debugRoot - check console now!`)
+
+							log(` Root attributes: ${root.attributes.length}`)
+    						log(` TipoDeComprobante: "${root.getAttribute('TipoDeComprobante')}"`)
+							
+							//We only want to log transactions that are actual payments, so tipo_comprobante = I
+							//If it's P, skip it
+							if (root.getAttribute('TipoDeComprobante') == 'P') {
+								return
+							}
+
+							var folio = root.getAttribute('Folio')
+							var fecha = root.getAttribute('Fecha').split('T')[0]
+							var hora = root.getAttribute('Fecha').split('T')[1]
+
 						})
 
 					}
