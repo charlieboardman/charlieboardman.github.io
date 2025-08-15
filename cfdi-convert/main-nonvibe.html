@@ -114,20 +114,49 @@
 							if (root.getAttribute('TipoDeComprobante') == 'P') {
 								return
 							}
+							
+							//Build the row
+							var invoiceRow = {}
 
-							var folio = root.getAttribute('Folio')
-							var fecha = root.getAttribute('Fecha').split('T')[0]
-							var hora = root.getAttribute('Fecha').split('T')[1]
+							//Pull out the child elements
+							var emisorElement = root.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Emisor')[0]
+							var conceptoElements = root.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Concepto')
+
+							//Pull out the elements to put into the row
+							invoiceRow.fecha = root.getAttribute('Fecha').split('T')[0]
+							invoiceRow.hora = root.getAttribute('Fecha').split('T')[1]
+							invoiceRow.subtotal = root.getAttribute('SubTotal')
+							invoiceRow.descuento = root.getAttribute('Descuento')
+							invoiceRow.total = root.getAttribute('Total')
+							invoiceRow.emimisor_nombre=emisorElement.getAttribute('Nombre')
+							invoiceRow.descriptions = Array.from(conceptoElements).map(concepto => concepto.getAttribute('Descripcion')).join(': ')
+							
+							//Elements to be filled in manually in the spreadsheet
+							invoiceRow.account_code = ''
+							invoiceRow.class_code = ''
+
+							allFacturas.push(invoiceRow)
+
+							window.debugRow = invoiceRow
+
+						
 
 						})
 
 					}
 				})
-			}			
+			}	
+			
+			//Make the Excel sheet with the allFacturas array
+			const workbook = XLSX.utils.book_new()
+			const worksheet = XLSX.utils.json_to_sheet(allFacturas)
+			XLSX.utils.book_append_sheet(workbook, worksheet, 'Facturas') //todo add date range to worksheet name
+			XLSX.writeFile(workbook, 'facturas.xlsx') //todo add date range
+			log(`Downloaded facturas.xlsx with ${allFacturas.length} rows!`)
 			
 		});
+
 	</script>
 
 </body>
 </html>
-
