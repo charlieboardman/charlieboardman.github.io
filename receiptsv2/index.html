@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Receipt Capture</title>
+
+<!-- jsPDF & Fuse.js from CDNs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+
+<style>
+/* ----------- RESET & LAYOUT ----------- */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:#fafafa;display:flex;flex-direction:column;min-height:100vh;
+}
+header{background:#1976d2;color:#fff;padding:16px 20px;font-size:22px;font-weight:600}
+main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:10px}
+.form-wrapper{
+  width:100%;max-width:620px;background:#fff;border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,.1);padding:20px
+}
+
+/* ----------- FORM ELEMENTS ----------- */
+label{font-weight:600;margin-bottom:6px;display:block}
+input,textarea,button,select{
+  width:100%;font-size:18px;border-radius:8px;border:1px solid #ccc;
+  padding:12px;font-family:inherit
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#1976d2}
+textarea{min-height:90px;resize:vertical}
+button{cursor:pointer;border:none;font-weight:700}
+button.primary{background:#1976d2;color:#fff}
+button.primary:disabled{opacity:.6}
+button.secondary{background:#4caf50;color:#fff;margin-top:8px}
+
+/* ----------- IMAGE GRID ----------- */
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
+      gap:8px;margin:12px 0}
+.pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden}
+.pic img{width:100%;height:100%;object-fit:cover}
+.pic button{position:absolute;top:2px;right:2px;width:26px;height:26px;
+            background:#f44336;color:#fff;border-radius:50%;border:none;line-height:1}
+
+/* ----------- AUTOCOMPLETE ----------- */
+.ac-wrap{position:relative}
+.ac-list{
+  position:absolute;top:100%;left:0;right:0;background:#fff;max-height:200px;
+  overflow-y:auto;border:1px solid #ddd;border-top:none;z-index:1000
+}
+.ac-item{padding:10px;font-size:16px;cursor:pointer}
+.ac-item:hover{background:#f1f1f1}
+
+/* ----------- STATUS / LOG ----------- */
+#status{margin-top:14px;font-weight:600;text-align:center}
+.ok{color:#2e7d32} .err{color:#c62828} .info{color:#1565c0}
+/* small monospace log toggle */
+details{margin-top:14px;font-size:14px}
+pre{white-space:pre-wrap;font-family:monospace;padding:8px;border:1px solid #ddd;
+    background:#fafafa;border-radius:6px;max-height:200px;overflow-y:auto}
+
+/* ----------- RESPONSIVE ----------- */
+@media(min-width:768px){
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+}
+</style>
+</head>
+<body>
+
+<header>📸 Receipt Capture</header>
+<main>
+  <div class="form-wrapper">
+    <input id="camera" type="file" accept="image/*" capture="environment" multiple hidden>
+
+    <button id="addPhotos"  class="secondary">📷 Add / Take Photos</button>
+    <div id="grid"></div>
+
+    <label>Description *</label>
+    <textarea id="desc"></textarea>
+
+    <label>Date *</label>
+    <input type="date" id="date">
+
+    <label>Payment Source</label>
+    <div class="ac-wrap"><input id="paySrc"><div id="acPay" class="ac-list" hidden></div></div>
+
+    <div class="grid-3">
+      <div>
+        <label>Account Code</label>
+        <div class="ac-wrap"><input id="acct"><div id="acAcct" class="ac-list" hidden></div></div>
+      </div>
+      <div>
+        <label>Class Code</label>
+        <div class="ac-wrap"><input id="cls"><div id="acCls" class="ac-list" hidden></div></div>
+      </div>
+      <div>
+        <label>Vendor</label>
+        <input id="vendor">
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:12px">
+      <div><label>MXN</label><input type="number" step="0.01" id="mxn"></div>
+      <div><label>ER</label><input type="number" step="0.0001" id="er"></div>
+      <div><label>USD</label><input type="number" step="0.01" id="usd"></div>
+    </div>
+
+    <label style="margin-top:12px">Project</label><input id="project">
+    <label style="margin-top:12px">Notes</label><textarea id="notes"></textarea>
+
+    <button id="submit" class="primary" style="margin-top:16px">Submit Receipt</button>
+    <div id="status"></div>
+
+    <details><summary>Log</summary><pre id="log"></pre></details>
+  </div>
+</main>
+
+<script>
+/* ---------- CONFIG ---------- */
+const GAS_URL   = 'https://script.google.com/macros/s/AKfycbw-8oBC_kQgF4P5bqetnbCZrhmko96EPnMZP6Tcy2R3bVTGUi5gvE9jtLSjy2fKejh53A/exec';       // <-- paste the /exec URL
+const CSV_FILES = {pay:'payment_sources.csv', acct:'accounts.csv', cls:'classes.csv'};
+const {jsPDF}=window.jspdf;
+
+/* ---------- STATE ---------- */
+let photos=[], csv = {pay:[], acct:[], cls:[]}, fuse={};
+
+/* ---------- MINI HELPERS ---------- */
+const $ = id=>document.getElementById(id);
+const log = m => {$('#log').textContent += `[${new Date().toLocaleTimeString()}] ${m}\n`;}
+const status = (t,c='info')=>{$('#status').className=c;$('#status').textContent=t;}
+const readCSV = async url => (await fetch(url)).text()
+                      .then(t=>t.trim().split(/\r?\n/).slice(1).map(l=>l.split(',').map(s=>s.trim())));
+/* ---------- LOAD CSVs + build Fuse indexes ---------- */
+Promise.all([
+  fetch(CSV_FILES.pay).then(r=>r.text()).then(t=>t.trim().split(/\r?\n/).filter(l=>l)),
+  readCSV(CSV_FILES.acct),
+  readCSV(CSV_FILES.cls)
+]).then(([pay,acct,cls])=>{
+  csv.pay = pay;
+  csv.acct= acct.map(r=>`${r[0]} - ${r[1]}`);
+  csv.cls = cls .map(r=>`${r[0]} - ${r[1]}`);
+  fuse.pay = new Fuse(csv.pay,{includeScore:true,threshold:.4});
+  fuse.acct= new Fuse(csv.acct,{includeScore:true,threshold:.4});
+  fuse.cls = new Fuse(csv.cls,{includeScore:true,threshold:.4});
+  log('CSV files loaded');
+});
+
+/* ---------- IMAGE HANDLING ---------- */
+$('addPhotos').onclick=()=>$('camera').click();
+$('camera').onchange=e=>{
+  [...e.target.files].forEach(f=>{photos.push(f); addPreview(f); log(`photo ${f.name}`)});
+  e.target.value='';
+};
+function addPreview(file){
+  const div=document.createElement('div');div.className='pic';
+  const img=document.createElement('img');img.src=URL.createObjectURL(file);
+  const rm =document.createElement('button');rm.textContent='×';
+  rm.onclick=()=>{photos.splice(photos.indexOf(file),1);div.remove();};
+  div.append(img,rm);$('#grid').append(div);
+}
+
+/* ---------- AUTOCOMPLETE (generic) ---------- */
+function attachAC(input,listKey,listDiv){
+  input.addEventListener('input',e=>{
+    const q=e.target.value.trim();
+    if(!q){listDiv.hidden=true;return;}
+    const res=fuse[listKey].search(q,{limit:6}).map(r=>r.item);
+    listDiv.innerHTML=res.map(v=>`<div class="ac-item">${v}</div>`).join('');
+    [...listDiv.children].forEach(ch=>ch.onclick=()=>{
+      input.value=ch.textContent; listDiv.hidden=true;
+    });
+    listDiv.hidden=false;
+  });
+  document.addEventListener('click',ev=>{if(!listDiv.contains(ev.target)&&ev.target!==input)listDiv.hidden=true;});
+}
+attachAC($('paySrc'),'pay',$('acPay'));
+attachAC($('acct'),'acct',$('acAcct'));
+attachAC($('cls'),'cls',$('acCls'));
+
+/* ---------- SUBMIT ---------- */
+$('date').value=new Date().toISOString().split('T')[0];
+$('submit').onclick=async()=>{
+  if(!photos.length){status('Add at least one photo','err');return;}
+  if(!$('#desc').value.trim()){status('Description required','err');return;}
+
+  $('submit').disabled=true; status('Building PDF…','info');
+
+  /* build PDF */
+  const pdf=new jsPDF();
+  for(let i=0;i<photos.length;i++){
+    const dataURL=await resize(photos[i]);
+    const img=new Image(); img.src=dataURL; await img.decode();
+    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+    const r=Math.min(pw/img.width,ph/img.height),w=img.width*r,h=img.height*r;
+    if(i)pdf.addPage();
+    pdf.addImage(dataURL,'JPEG',(pw-w)/2,(ph-h)/2,w,h);
+  }
+
+  status('Uploading…','info'); log('uploading to GAS');
+  try{
+    const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({
+      pdf_base64:pdf.output('datauristring').split(',')[1],
+      date:$('#date').value,
+      description:$('#desc').value,
+      payment_source:$('#paySrc').value,
+      account_code:$('#acct').value,
+      class_code:$('#cls').value,
+      vendor:$('#vendor').value,
+      mxn:$('#mxn').value, ER:$('#er').value, usd:$('#usd').value,
+      project:$('#project').value, notes:$('#notes').value
+    })});
+    const j=await res.json();
+    if(!res.ok) throw new Error(j.message||res.status);
+    status(`✅ Saved: ${j.receipt_id}`,'ok'); log(JSON.stringify(j));
+    setTimeout(()=>location.reload(),1500);
+  }catch(err){status('❌ '+err.message,'err');log('ERR '+err.message);}
+  $('submit').disabled=false;
+};
+
+/* ---------- IMAGE RESIZE ---------- */
+function resize(file){
+  return new Promise(res=>{
+    const fr=new FileReader();
+    fr.onload=e=>{
+      const img=new Image();img.onload=()=>{
+        const max=1080; let w=img.width,h=img.height;
+        if(w>h&&w>max){h=max/w*h;w=max;} else if(h>max){w=max/h*w;h=max;}
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        res(cv.toDataURL('image/jpeg',0.8));
+      }; img.src=e.target.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+</script>
+</body>
+</html>
