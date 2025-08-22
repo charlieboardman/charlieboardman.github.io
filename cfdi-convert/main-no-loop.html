@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>CFDI (ZIP of XML) → XLSX</title>
+	<style>
+		body {
+			font-family: system-ui, sans-serif;
+			margin: 2rem;
+			max-width: 900px;
+		}
+		h1 {
+			margin-top: 0;
+		}
+		.row {
+			display: flex;
+			gap: 1rem;
+			align-items: center;
+			flex-wrap: wrap;
+		}
+		#log {
+			white-space: pre-wrap;
+			background: #f6f6f6;
+			padding: 1rem;
+			border-radius: 8px;
+			max-height: 40vh;
+			overflow: auto;
+		}
+		button {
+			padding: 0.6rem 1rem;
+		}
+		.muted {
+			color: #666;
+		}
+		progress {
+			width: 100%;
+			height: 12px;
+		}
+	</style>
+</head>
+<body>
+	<h1>CFDI ZIP → XLSX Converter (client-side)</h1>
+	<p class="muted">
+		Drop or select one or more <strong>.zip</strong> files (each containing
+		CFDI XMLs). Nothing leaves your browser.
+	</p>
+
+	<div class="row">
+		<input id="fileInput" type="file" accept=".zip" multiple />
+		<button id="convertBtn">Convert to XLSX</button>
+	</div>
+
+	<p class="muted">Progress</p>
+	<progress id="prog" max="100" value="0"></progress>
+
+	<h3>Log</h3>
+	<div id="log"></div>
+
+	<!-- We'll add our JavaScript dependencies and code here step by step -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <script>
+        const fileInput = document.getElementById('fileInput') //Get the file input element
+        const convertBtn = document.getElementById('convertBtn') //Get the convert button
+        const logDiv = document.getElementById('log') //Get the log area of the page
+
+        function log(message) {
+            logDiv.textContent += message+ '\n'           
+        }
+
+		convertBtn.addEventListener('click', handleConvert);
+        
+        async function handleConvert() {
+            const zipFiles = Array.from(fileInput.files) //Make the files an array so you can map them and use promises
+			log(`Selected ${zipFiles.length} files`)
+            
+            const loadedZips = await Promise.all( //Wait for all the files to load
+                zipFiles.map(file => JSZip.loadAsync(file)) //zips is now an array of JSZip objects
+                ); 
+            
+            const allFiles = loadedZips.flatMap(zip => Object.values(zip.files)) //Flatten all the files into one array
+
+            const xmlStrings = await Promise.all(
+                allFiles.map(file => file.async('text'))
+            )
+            
+            //Parse XML strings into DOMs
+            const parser = new DOMParser()
+			const xmlDocs = xmlStrings.map(xml => parser.parseFromString(xml, 'application/xml'))
+							
+            const allFacturas = xmlDocs.map(createRow).filter(Boolean)  
+            
+            //Sort the facturas
+            allFacturas.sort((a,b) => a.fechaCompleta.localeCompare(b.fechaCompleta));
+
+            //Split the date and time
+            const finalRows = allFacturas.map(row => {
+                const [fecha, hora] = row.fechaCompleta.split('T')
+                return {fecha, hora, ...row}
+            })
+    
+            //Make the Excel sheet with the allFacturas array
+			const workbook = XLSX.utils.book_new()
+			const worksheet = XLSX.utils.json_to_sheet(finalRows)
+			XLSX.utils.book_append_sheet(workbook, worksheet, 'Facturas') //todo add date range to worksheet name
+			XLSX.writeFile(workbook, 'facturas.xlsx') //todo add date range
+			log(`Downloaded facturas.xlsx with ${finalRows.length} rows!`)
+        }
+
+        function createRow(xmlDoc) {
+
+            var root = xmlDoc.documentElement
+            window.debugRoot = root //Remove this for prod
+            log(` Set window.debugRoot - check console now!`)
+
+            log(` Root attributes: ${root.attributes.length}`)
+            log(` TipoDeComprobante: "${root.getAttribute('TipoDeComprobante')}"`)
+            
+            //We only want to log transactions that are actual payments, so tipo_comprobante = I
+            //If it's P, skip it
+            if (root.getAttribute('TipoDeComprobante') == 'P') {
+                return
+            }
+            
+            //Build the row
+            var invoiceRow = {}
+
+            //Pull out the child elements
+            var emisorElement = root.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Emisor')[0]
+            var conceptoElements = root.getElementsByTagNameNS('http://www.sat.gob.mx/cfd/4', 'Concepto')
+
+            //Pull out the elements to put into the row
+            invoiceRow.fechaCompleta = root.getAttribute('Fecha')
+            invoiceRow.subtotal = root.getAttribute('SubTotal')
+            invoiceRow.descuento = root.getAttribute('Descuento')
+            invoiceRow.total = root.getAttribute('Total')
+            invoiceRow.emisor_nombre=emisorElement.getAttribute('Nombre')
+            invoiceRow.descriptions = Array.from(conceptoElements).map(concepto => concepto.getAttribute('Descripcion')).join(': ')
+            
+            //Elements to be filled in manually in the spreadsheet
+            invoiceRow.account_code = ''
+            invoiceRow.class_code = ''
+
+            window.debugRow = invoiceRow
+
+            return invoiceRow
+
+
+        }
+	
+
+	</script>
+
+</body>
+</html>
