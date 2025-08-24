@@ -22,7 +22,7 @@
   .muted { color: #666; font-size: 14px; margin-bottom: 12px; }
   .btn {
     width: 100%; padding: 16px; font-size: 18px; border: none; border-radius: 10px;
-    cursor: pointer; font-weight: 600;
+    cursor: pointer; font-weight: 600; text-align: center; display: inline-block;
   }
   .btn-primary { background: #1976d2; color: #fff; }
   .btn-primary:active { background: #155fb1; }
@@ -30,7 +30,8 @@
   .btn-add:active { background: #296e2c; }
   .btn:disabled { opacity: .6; cursor: not-allowed; }
   .form-group { margin: 14px 0; }
-  label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 15px; }
+  label[for="filePicker"] { cursor: pointer; }
+  .field-label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 15px; }
   input[type="text"], input[type="date"], textarea {
     width: 100%; padding: 12px 14px; font-size: 16px; border: 1px solid #ddd; border-radius: 10px; background: #fff;
   }
@@ -52,13 +53,18 @@
 
   .actionbar { position: sticky; bottom: 0; background: #fff; padding-top: 12px; margin-top: 8px; }
 
+  /* Make the input accessible to the browser without showing it */
+  .visually-hidden {
+    position: fixed; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+  }
+
   @media (max-width: 520px) {
     .container { padding: 14px; border-radius: 12px; }
     .preview-grid { grid-template-columns: repeat(3, 1fr); }
   }
 </style>
 
-<!-- Endpoint guards: look for GAS_ID, then #exec / ?exec, then localStorage. If missing, show setup screen. -->
+<!-- Endpoint guards: prefer global GAS_ID, else #exec / ?exec, else localStorage. If missing, show setup screen. -->
 <script>
   // Build from candidate value (ID or full URL)
   function buildEndpoint(raw){
@@ -135,20 +141,20 @@
     <h1>📸 Receipt Capture</h1>
     <p class="muted">Create a PDF from photos and upload to Drive.</p>
 
-    <input id="filePicker" type="file" accept="image/*;capture=camera" capture="environment" multiple hidden>
-
-    <button id="addBtn" class="btn btn-add">
+    <!-- Option A: label triggers the input (no programmatic .click) -->
+    <input id="filePicker" type="file" accept="image/*" capture="environment" multiple class="visually-hidden">
+    <label for="filePicker" id="addBtn" class="btn btn-add" role="button" tabindex="0">
       📷 Add Photos
       <span class="photo-badge" id="photoBadge" style="display:none">0</span>
-    </button>
+    </label>
 
     <div class="form-group">
-      <label for="description">Description *</label>
+      <span class="field-label">Description *</span>
       <textarea id="description" placeholder="Enter receipt description..." required></textarea>
     </div>
 
     <div class="form-group">
-      <label for="date">Date</label>
+      <span class="field-label">Date</span>
       <input type="date" id="date">
     </div>
 
@@ -175,7 +181,6 @@
 
   // Elements
   const filePicker   = document.getElementById('filePicker');
-  const addBtn       = document.getElementById('addBtn');
   const previewGrid  = document.getElementById('previewGrid');
   const description  = document.getElementById('description');
   const dateInput    = document.getElementById('date');
@@ -192,7 +197,6 @@
   dateInput.value = new Date().toISOString().split('T')[0];
 
   // Events
-  addBtn.addEventListener('click', () => filePicker.click());
   filePicker.addEventListener('change', (e) => {
     const files = Array.from(e.target.files || []);
     files.forEach(file => {
