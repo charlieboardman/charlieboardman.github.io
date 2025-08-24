@@ -2,240 +2,389 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Receipt Capture</title>
-
-<!-- jsPDF & Fuse.js from CDNs -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capture Receipts</title>
 <style>
-/* ----------- RESET & LAYOUT ----------- */
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  background:#fafafa;display:flex;flex-direction:column;min-height:100vh;
-}
-header{background:#1976d2;color:#fff;padding:16px 20px;font-size:22px;font-weight:600}
-main{flex:1;display:flex;justify-content:center;align-items:flex-start;padding:10px}
-.form-wrapper{
-  width:100%;max-width:620px;background:#fff;border-radius:12px;
-  box-shadow:0 4px 12px rgba(0,0,0,.1);padding:20px
-}
+  :root { --gap: 14px; --radius: 14px; --shadow: 0 6px 24px rgba(0,0,0,.08); }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f7; color: #222;
+    min-height: 100svh; display: flex; flex-direction: column; align-items: stretch;
+  }
+  .wrap { flex: 1 0 auto; display: grid; place-items: start center; padding: var(--gap); }
+  .container {
+    width: 100%; max-width: 640px; background: #fff; border-radius: var(--radius);
+    padding: calc(var(--gap) * 1.2); box-shadow: var(--shadow);
+  }
+  h1 { font-size: 22px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .muted { color: #666; font-size: 14px; margin-bottom: 12px; }
+  .btn {
+    width: 100%; padding: 16px; font-size: 18px; border: none; border-radius: 10px;
+    cursor: pointer; font-weight: 600;
+  }
+  .btn-primary { background: #1976d2; color: #fff; }
+  .btn-primary:active { background: #155fb1; }
+  .btn-add    { background: #2e7d32; color: #fff; }
+  .btn-add:active { background: #296e2c; }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+  .form-group { margin: 14px 0; }
+  label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; font-size: 15px; }
+  input[type="text"], input[type="date"], textarea {
+    width: 100%; padding: 12px 14px; font-size: 16px; border: 1px solid #ddd; border-radius: 10px; background: #fff;
+  }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus, textarea:focus { outline: none; border-color: #1976d2; box-shadow: 0 0 0 3px rgba(25,118,210,.12); }
+  .preview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }
+  .preview-item { position: relative; aspect-ratio: 1; }
+  .preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; image-orientation: from-image; }
+  .preview-item .remove {
+    position: absolute; top: -8px; right: -8px; width: 26px; height: 26px;
+    background: #e53935; color: white; border: none; border-radius: 50%; font-size: 18px; line-height: 1; cursor: pointer;
+  }
+  .status { padding: 12px; border-radius: 10px; margin-top: 10px; font-weight: 600; text-align: center; }
+  .status.success { background: #e8f5e9; color: #2e7d32; }
+  .status.error   { background: #ffebee; color: #c62828; }
+  .status.info    { background: #e3f2fd; color: #1565c0; }
+  .log { background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; max-height: 160px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+  .photo-badge { background: #1976d2; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 13px; margin-left: 8px; }
 
-/* ----------- FORM ELEMENTS ----------- */
-label{font-weight:600;margin-bottom:6px;display:block}
-input,textarea,button,select{
-  width:100%;font-size:18px;border-radius:8px;border:1px solid #ccc;
-  padding:12px;font-family:inherit
-}
-input:focus,textarea:focus,select:focus{outline:none;border-color:#1976d2}
-textarea{min-height:90px;resize:vertical}
-button{cursor:pointer;border:none;font-weight:700}
-button.primary{background:#1976d2;color:#fff}
-button.primary:disabled{opacity:.6}
-button.secondary{background:#4caf50;color:#fff;margin-top:8px}
+  .actionbar { position: sticky; bottom: 0; background: #fff; padding-top: 12px; margin-top: 8px; }
 
-/* ----------- IMAGE GRID ----------- */
-#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
-      gap:8px;margin:12px 0}
-.pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden}
-.pic img{width:100%;height:100%;object-fit:cover}
-.pic button{position:absolute;top:2px;right:2px;width:26px;height:26px;
-            background:#f44336;color:#fff;border-radius:50%;border:none;line-height:1}
-
-/* ----------- AUTOCOMPLETE ----------- */
-.ac-wrap{position:relative}
-.ac-list{
-  position:absolute;top:100%;left:0;right:0;background:#fff;max-height:200px;
-  overflow-y:auto;border:1px solid #ddd;border-top:none;z-index:1000
-}
-.ac-item{padding:10px;font-size:16px;cursor:pointer}
-.ac-item:hover{background:#f1f1f1}
-
-/* ----------- STATUS / LOG ----------- */
-#status{margin-top:14px;font-weight:600;text-align:center}
-.ok{color:#2e7d32} .err{color:#c62828} .info{color:#1565c0}
-/* small monospace log toggle */
-details{margin-top:14px;font-size:14px}
-pre{white-space:pre-wrap;font-family:monospace;padding:8px;border:1px solid #ddd;
-    background:#fafafa;border-radius:6px;max-height:200px;overflow-y:auto}
-
-/* ----------- RESPONSIVE ----------- */
-@media(min-width:768px){
-  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-}
+  @media (max-width: 520px) {
+    .container { padding: 14px; border-radius: 12px; }
+    .preview-grid { grid-template-columns: repeat(3, 1fr); }
+  }
 </style>
+
+<!-- Endpoint guards: look for GAS_ID, then #exec / ?exec, then localStorage. If missing, show setup screen. -->
+<script>
+  // Build from candidate value (ID or full URL)
+  function buildEndpoint(raw){
+    if (!raw) return '';
+    return raw.startsWith('http')
+      ? raw.replace(/\/dev(?:\b|$)/, '/exec')
+      : `https://script.google.com/macros/s/${raw}/exec`;
+  }
+  function getExecFromUrl(){
+    const h = new URLSearchParams(location.hash.slice(1));
+    const q = new URLSearchParams(location.search);
+    return h.get('exec') || q.get('exec') || '';
+  }
+
+  // Priority: global GAS_ID (if defined) → URL (#exec or ?exec) → localStorage
+  const RAW_EXEC =
+    (typeof GAS_ID !== 'undefined' && GAS_ID) ? GAS_ID :
+    getExecFromUrl() || localStorage.getItem('receipt_exec') || '';
+
+  const WEBAPP_URL = buildEndpoint(RAW_EXEC);
+  window.WEBAPP_URL = WEBAPP_URL; // expose for the app
+
+  if (!WEBAPP_URL) {
+    // Replace document with a setup screen; user can paste an exec ID or full /exec URL
+    document.documentElement.innerHTML = `
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Receipt Capture – Setup</title>
+        <style>
+          body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f5f7;margin:0;min-height:100svh;display:grid;place-items:center}
+          .wrap{width:min(720px,92vw);background:#fff;padding:24px 20px;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+          h1{margin:0 0 10px;font-size:22px}
+          p{color:#555;margin:8px 0}
+          input{width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:16px}
+          .row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+          button{padding:12px 16px;border:0;border-radius:10px;background:#1976d2;color:#fff;font-weight:700;cursor:pointer}
+          button.secondary{background:#6b7280}
+          code{background:#f1f3f5;padding:2px 6px;border-radius:6px}
+        </style>
+      </head>
+      <body>
+        <div class="wrap">
+          <h1>Set up endpoint</h1>
+          <p>This page needs your Apps Script web-app endpoint (exec ID or full <code>/exec</code> URL).</p>
+          <p>Fastest way: bookmark with <code>#exec=YOUR_EXEC_ID</code>, e.g. <code>${location.origin + location.pathname}#exec=abc123</code></p>
+          <input id="execInput" placeholder="Paste exec ID or full /exec URL">
+          <div class="row">
+            <button onclick="(function(){
+              const v = document.getElementById('execInput').value.trim();
+              if(!v){alert('Please paste an exec ID or URL');return;}
+              localStorage.setItem('receipt_exec', v);
+              const isUrl = /^https?:/i.test(v);
+              const id = isUrl ? v.split('/').filter(Boolean).slice(-2,-1)[0] : v;
+              location.hash = '#exec=' + encodeURIComponent(id);
+              location.reload();
+            })()">Save & Reload</button>
+            <button class="secondary" onclick="(function(){
+              localStorage.removeItem('receipt_exec');
+              location.href = location.pathname; // drop params/fragments
+            })()">Clear</button>
+          </div>
+        </div>
+      </body>`;
+  }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-/Vwzv+N2zW2mC3z4nE6h0B4mY9yXxDkQ5q2wK3oJr8G8eC4gGg7w2p8zv7zFf3X5p8f1nQx4xQkq9tR1JmC6GQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 
-<header>📸 Receipt Capture</header>
-<main>
-  <div class="form-wrapper">
-    <input id="camera" type="file" accept="image/*" capture="environment" multiple hidden>
+<div class="wrap" id="app" style="display:none">
+  <div class="container">
+    <h1>📸 Receipt Capture</h1>
+    <p class="muted">Create a PDF from photos and upload to Drive.</p>
 
-    <button id="addPhotos"  class="secondary">📷 Add / Take Photos</button>
-    <div id="grid"></div>
+    <input id="filePicker" type="file" accept="image/*;capture=camera" capture="environment" multiple hidden>
 
-    <label>Description *</label>
-    <textarea id="desc"></textarea>
+    <button id="addBtn" class="btn btn-add">
+      📷 Add Photos
+      <span class="photo-badge" id="photoBadge" style="display:none">0</span>
+    </button>
 
-    <label>Date *</label>
-    <input type="date" id="date">
-
-    <label>Payment Source</label>
-    <div class="ac-wrap"><input id="paySrc"><div id="acPay" class="ac-list" hidden></div></div>
-
-    <div class="grid-3">
-      <div>
-        <label>Account Code</label>
-        <div class="ac-wrap"><input id="acct"><div id="acAcct" class="ac-list" hidden></div></div>
-      </div>
-      <div>
-        <label>Class Code</label>
-        <div class="ac-wrap"><input id="cls"><div id="acCls" class="ac-list" hidden></div></div>
-      </div>
-      <div>
-        <label>Vendor</label>
-        <input id="vendor">
-      </div>
+    <div class="form-group">
+      <label for="description">Description *</label>
+      <textarea id="description" placeholder="Enter receipt description..." required></textarea>
     </div>
 
-    <div class="grid-3" style="margin-top:12px">
-      <div><label>MXN</label><input type="number" step="0.01" id="mxn"></div>
-      <div><label>ER</label><input type="number" step="0.0001" id="er"></div>
-      <div><label>USD</label><input type="number" step="0.01" id="usd"></div>
+    <div class="form-group">
+      <label for="date">Date</label>
+      <input type="date" id="date">
     </div>
 
-    <label style="margin-top:12px">Project</label><input id="project">
-    <label style="margin-top:12px">Notes</label><textarea id="notes"></textarea>
+    <div class="preview-grid" id="previewGrid"></div>
 
-    <button id="submit" class="primary" style="margin-top:16px">Submit Receipt</button>
-    <div id="status"></div>
+    <div class="actionbar">
+      <button id="submitBtn" class="btn btn-primary">Submit Receipt</button>
+      <div id="statusDiv" class="status" style="display:none"></div>
+    </div>
 
-    <details><summary>Log</summary><pre id="log"></pre></details>
+    <details id="logDetails" style="margin-top:10px; display:none">
+      <summary style="cursor:pointer; padding:8px 0; color:#666;">View Log</summary>
+      <div class="log" id="logDiv"></div>
+    </details>
   </div>
-</main>
+</div>
 
 <script>
-/* ---------- CONFIG ---------- */
-const GAS_URL   = 'https://script.google.com/macros/s/AKfycbw-8oBC_kQgF4P5bqetnbCZrhmko96EPnMZP6Tcy2R3bVTGUi5gvE9jtLSjy2fKejh53A/exec';       // <-- paste the /exec URL
-const CSV_FILES = {pay:'payment_sources.csv', acct:'accounts.csv', cls:'classes.csv'};
-const {jsPDF}=window.jspdf;
+(function init(){
+  if (!window.WEBAPP_URL) return; // setup screen already shown
+  document.getElementById('app').style.display = '';
 
-/* ---------- STATE ---------- */
-let photos=[], csv = {pay:[], acct:[], cls:[]}, fuse={};
+  const { jsPDF } = window.jspdf;
 
-/* ---------- MINI HELPERS ---------- */
-const $ = id=>document.getElementById(id);
-const log = m => {$('#log').textContent += `[${new Date().toLocaleTimeString()}] ${m}\n`;}
-const status = (t,c='info')=>{$('#status').className=c;$('#status').textContent=t;}
-const readCSV = async url => (await fetch(url)).text()
-                      .then(t=>t.trim().split(/\r?\n/).slice(1).map(l=>l.split(',').map(s=>s.trim())));
-/* ---------- LOAD CSVs + build Fuse indexes ---------- */
-Promise.all([
-  fetch(CSV_FILES.pay).then(r=>r.text()).then(t=>t.trim().split(/\r?\n/).filter(l=>l)),
-  readCSV(CSV_FILES.acct),
-  readCSV(CSV_FILES.cls)
-]).then(([pay,acct,cls])=>{
-  csv.pay = pay;
-  csv.acct= acct.map(r=>`${r[0]} - ${r[1]}`);
-  csv.cls = cls .map(r=>`${r[0]} - ${r[1]}`);
-  fuse.pay = new Fuse(csv.pay,{includeScore:true,threshold:.4});
-  fuse.acct= new Fuse(csv.acct,{includeScore:true,threshold:.4});
-  fuse.cls = new Fuse(csv.cls,{includeScore:true,threshold:.4});
-  log('CSV files loaded');
-});
+  // Elements
+  const filePicker   = document.getElementById('filePicker');
+  const addBtn       = document.getElementById('addBtn');
+  const previewGrid  = document.getElementById('previewGrid');
+  const description  = document.getElementById('description');
+  const dateInput    = document.getElementById('date');
+  const submitBtn    = document.getElementById('submitBtn');
+  const statusDiv    = document.getElementById('statusDiv');
+  const logDiv       = document.getElementById('logDiv');
+  const logDetails   = document.getElementById('logDetails');
+  const photoBadge   = document.getElementById('photoBadge');
 
-/* ---------- IMAGE HANDLING ---------- */
-$('addPhotos').onclick=()=>$('camera').click();
-$('camera').onchange=e=>{
-  [...e.target.files].forEach(f=>{photos.push(f); addPreview(f); log(`photo ${f.name}`)});
-  e.target.value='';
-};
-function addPreview(file){
-  const div=document.createElement('div');div.className='pic';
-  const img=document.createElement('img');img.src=URL.createObjectURL(file);
-  const rm =document.createElement('button');rm.textContent='×';
-  rm.onclick=()=>{photos.splice(photos.indexOf(file),1);div.remove();};
-  div.append(img,rm);$('#grid').append(div);
-}
+  // State
+  let photos = [];
 
-/* ---------- AUTOCOMPLETE (generic) ---------- */
-function attachAC(input,listKey,listDiv){
-  input.addEventListener('input',e=>{
-    const q=e.target.value.trim();
-    if(!q){listDiv.hidden=true;return;}
-    const res=fuse[listKey].search(q,{limit:6}).map(r=>r.item);
-    listDiv.innerHTML=res.map(v=>`<div class="ac-item">${v}</div>`).join('');
-    [...listDiv.children].forEach(ch=>ch.onclick=()=>{
-      input.value=ch.textContent; listDiv.hidden=true;
+  // Today’s date
+  dateInput.value = new Date().toISOString().split('T')[0];
+
+  // Events
+  addBtn.addEventListener('click', () => filePicker.click());
+  filePicker.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => {
+      photos.push(file);
+      addPreviewItem(file, photos.length - 1);
+      log(`Added: ${file.name} (${Math.round(file.size/1024)} KB)`);
     });
-    listDiv.hidden=false;
+    updatePhotoBadge();
+    filePicker.value = '';
   });
-  document.addEventListener('click',ev=>{if(!listDiv.contains(ev.target)&&ev.target!==input)listDiv.hidden=true;});
-}
-attachAC($('paySrc'),'pay',$('acPay'));
-attachAC($('acct'),'acct',$('acAcct'));
-attachAC($('cls'),'cls',$('acCls'));
+  submitBtn.addEventListener('click', handleSubmit);
 
-/* ---------- SUBMIT ---------- */
-$('date').value=new Date().toISOString().split('T')[0];
-$('submit').onclick=async()=>{
-  if(!photos.length){status('Add at least one photo','err');return;}
-  if(!$('#desc').value.trim()){status('Description required','err');return;}
+  // UI helpers
+  function addPreviewItem(file, index) {
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.dataset.index = index;
 
-  $('submit').disabled=true; status('Building PDF…','info');
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
 
-  /* build PDF */
-  const pdf=new jsPDF();
-  for(let i=0;i<photos.length;i++){
-    const dataURL=await resize(photos[i]);
-    const img=new Image(); img.src=dataURL; await img.decode();
-    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
-    const r=Math.min(pw/img.width,ph/img.height),w=img.width*r,h=img.height*r;
-    if(i)pdf.addPage();
-    pdf.addImage(dataURL,'JPEG',(pw-w)/2,(ph-h)/2,w,h);
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove';
+    removeBtn.textContent = '×';
+    removeBtn.onclick = () => removePhoto(index);
+
+    item.appendChild(img);
+    item.appendChild(removeBtn);
+    previewGrid.appendChild(item);
+  }
+  function removePhoto(index) {
+    photos.splice(index, 1);
+    rebuildPreviews();
+    updatePhotoBadge();
+    log(`Removed photo ${index + 1}`);
+  }
+  function rebuildPreviews() {
+    previewGrid.innerHTML = '';
+    photos.forEach((p, i) => addPreviewItem(p, i));
+  }
+  function updatePhotoBadge() {
+    if (photos.length > 0) {
+      photoBadge.textContent = photos.length;
+      photoBadge.style.display = '';
+    } else {
+      photoBadge.style.display = 'none';
+    }
+  }
+  function showStatus(message, type) {
+    statusDiv.textContent = message;
+    statusDiv.className = `status ${type || 'info'}`;
+    statusDiv.style.display = '';
+    if (type && type !== 'info') setTimeout(() => statusDiv.style.display = 'none', 5000);
+  }
+  function log(message) {
+    const time = new Date().toLocaleTimeString();
+    logDiv.textContent += `[${time}] ${message}\n`;
+    logDiv.scrollTop = logDiv.scrollHeight;
+    logDetails.style.display = '';
+  }
+  function startAlive(label) {
+    let dots = 0;
+    submitBtn.disabled = true;
+    const base = label || 'Working';
+    submitBtn.textContent = base;
+    const id = setInterval(() => {
+      dots = (dots + 1) % 4;
+      submitBtn.textContent = base + '.'.repeat(dots);
+    }, 450);
+    return () => { clearInterval(id); submitBtn.disabled = false; submitBtn.textContent = 'Submit Receipt'; };
   }
 
-  status('Uploading…','info'); log('uploading to GAS');
-  try{
-    const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({
-      pdf_base64:pdf.output('datauristring').split(',')[1],
-      date:$('#date').value,
-      description:$('#desc').value,
-      payment_source:$('#paySrc').value,
-      account_code:$('#acct').value,
-      class_code:$('#cls').value,
-      vendor:$('#vendor').value,
-      mxn:$('#mxn').value, ER:$('#er').value, usd:$('#usd').value,
-      project:$('#project').value, notes:$('#notes').value
-    })});
-    const j=await res.json();
-    if(!res.ok) throw new Error(j.message||res.status);
-    status(`✅ Saved: ${j.receipt_id}`,'ok'); log(JSON.stringify(j));
-    setTimeout(()=>location.reload(),1500);
-  }catch(err){status('❌ '+err.message,'err');log('ERR '+err.message);}
-  $('submit').disabled=false;
-};
+  // Main
+  async function handleSubmit() {
+    if (photos.length === 0) {
+      showStatus('Please add at least one photo', 'error');
+      return;
+    }
+    if (!description.value.trim()) {
+      showStatus('Description is required', 'error');
+      description.focus();
+      return;
+    }
 
-/* ---------- IMAGE RESIZE ---------- */
-function resize(file){
-  return new Promise(res=>{
-    const fr=new FileReader();
-    fr.onload=e=>{
-      const img=new Image();img.onload=()=>{
-        const max=1080; let w=img.width,h=img.height;
-        if(w>h&&w>max){h=max/w*h;w=max;} else if(h>max){w=max/h*w;h=max;}
-        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
-        cv.getContext('2d').drawImage(img,0,0,w,h);
-        res(cv.toDataURL('image/jpeg',0.8));
-      }; img.src=e.target.result;
-    };
-    fr.readAsDataURL(file);
-  });
-}
+    const stopAlive = startAlive('Uploading');
+
+    try {
+      log('Building PDF…');
+      showStatus('Building PDF…', 'info');
+
+      const pdf = new jsPDF();
+      for (let i = 0; i < photos.length; i++) {
+        log(`Processing image ${i + 1}/${photos.length}`);
+        showStatus(`Processing image ${i + 1} of ${photos.length}…`, 'info');
+
+        const dataUrl = await resizeImage(photos[i]);
+        const img = await loadImage(dataUrl);
+
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const scale = Math.min(pageW / img.width, pageH / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        const x = (pageW - w) / 2, y = (pageH - h) / 2;
+
+        if (i > 0) pdf.addPage();
+        pdf.addImage(dataUrl, 'JPEG', x, y, w, h);
+      }
+
+      log('Uploading to Drive…');
+      showStatus('Uploading to Drive…', 'info');
+
+      const payload = {
+        description: description.value.trim(),
+        date: dateInput.value,
+        pdf_base64: pdf.output('datauristring').split(',')[1]
+      };
+
+      const res = await fetch(window.WEBAPP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' }, // simple request, no preflight
+        body: JSON.stringify(payload),
+      });
+
+      if (res.type === 'opaque') {
+        showStatus('Upload sent, but response blocked by CORS. Ensure your Apps Script web app is “Execute as Me” and “Anyone with the link”, and that you are using the /exec URL.', 'error');
+        log('CORS: opaque response – check deployment visibility and use the /exec URL.');
+        return;
+      }
+
+      const raw = await res.text();
+      let data = null;
+      try { data = JSON.parse(raw); } catch { /* ignore */ }
+
+      if (!res.ok || !data || data.ok === false) {
+        const msg = data && data.error ? `${data.error.code || 'ERROR'}: ${data.error.message}` : (raw || `HTTP ${res.status}`);
+        showStatus('❌ ' + msg, 'error');
+        log('Server error: ' + (data ? JSON.stringify(data) : raw));
+        return;
+      }
+
+      showStatus(`✅ Success! Receipt ID: ${data.receipt_id}`, 'success');
+      log(`Success: receipt_id=${data.receipt_id}, fileId=${data.fileId}, elapsed_ms=${data.elapsed_ms}`);
+
+      // Reset
+      photos = [];
+      rebuildPreviews();
+      description.value = '';
+      dateInput.value = new Date().toISOString().split('T')[0];
+      updatePhotoBadge();
+
+    } catch (err) {
+      showStatus('❌ Upload failed', 'error');
+      log(`Error: ${err.message}`);
+    } finally {
+      stopAlive();
+    }
+  }
+
+  // Helpers
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+  function resizeImage(file) {
+    // Simple client compression, preserves aspect, max side ~1080px
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const max = 1080;
+          let { width, height } = img;
+          if (width > height && width > max) { height = (max / width) * height; width = max; }
+          else if (height > max)             { width  = (max / height) * width; height = max; }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(width); canvas.height = Math.round(height);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+})();
 </script>
+
 </body>
 </html>
