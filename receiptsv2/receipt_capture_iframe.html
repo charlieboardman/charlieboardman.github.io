@@ -1,609 +1,368 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1"
-    />
-    <title>Capture Receipts</title>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Capture Receipts</title>
 
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-          sans-serif;
-        background: #f5f5f5;
-        padding: 20px;
-        width: 100vw;
-        overflow-x: hidden;
-      }
-      .container {
-        max-width: 500px;
-        margin: 0 auto;
-        background: #fff;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-      h1 {
-        font-size: 24px;
-        margin-bottom: 20px;
-        color: #333;
-      }
-      .btn {
-        width: 100%;
-        padding: 16px;
-        font-size: 18px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        margin-bottom: 15px;
-      }
-      .btn-primary {
-        background: #1976d2;
-        color: #fff;
-      }
-      .btn-primary:active {
-        background: #1565c0;
-      }
-      .btn-add {
-        background: #4caf50;
-        color: #fff;
-      }
-      .btn-add:active {
-        background: #45a049;
-      }
-      .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-      .form-group {
-        margin-bottom: 15px;
-      }
-      label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 500;
-        color: #555;
-        font-size: 16px;
-      }
-      input[type='text'],
-      input[type='date'],
-      textarea {
-        width: 100%;
-        padding: 12px;
-        font-size: 16px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-family: inherit;
-      }
-      textarea {
-        min-height: 80px;
-        resize: vertical;
-      }
-      input:focus,
-      textarea:focus {
-        outline: none;
-        border-color: #1976d2;
-      }
-      .preview-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
-        margin-bottom: 15px;
-      }
-      .preview-item {
-        position: relative;
-        aspect-ratio: 1;
-      }
-      .preview-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 6px;
-        border: 1px solid #ddd;
-        image-orientation: from-image;
-      }
-      .preview-item .remove {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        width: 24px;
-        height: 24px;
-        background: #f44336;
-        color: #fff;
-        border: none;
-        border-radius: 50%;
-        font-size: 16px;
-        line-height: 1;
-        cursor: pointer;
-      }
-      .status {
-        padding: 12px;
-        border-radius: 6px;
-        margin-bottom: 15px;
-        font-weight: 500;
-        text-align: center;
-      }
-      .status.success {
-        background: #e8f5e9;
-        color: #2e7d32;
-      }
-      .status.error {
-        background: #ffebee;
-        color: #c62828;
-      }
-      .status.info {
-        background: #e3f2fd;
-        color: #1565c0;
-      }
-      .log {
-        background: #f5f5f5;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 10px;
-        font-family: monospace;
-        font-size: 12px;
-        max-height: 150px;
-        overflow-y: auto;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-      .hidden {
-        display: none;
-      }
-      .visually-hidden {
-        position: absolute !important;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-      }
-      @media (max-width: 500px) {
-        body {
-          padding: 10px;
-        }
-        .container {
-          border-radius: 8px;
-          padding: 15px;
-        }
-        .preview-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; width: 100vw; overflow-x: hidden; }
+  .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+  h1 { font-size: 24px; margin-bottom: 20px; color: #333; }
+  .btn { width: 100%; padding: 16px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-bottom: 15px; }
+  .btn-primary { background: #1976d2; color: white; }
+  .btn-primary:active { background: #1565c0; }
+  .btn-add { background: #4caf50; color: white; }
+  .btn-add:active { background: #45a049; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .form-group { margin-bottom: 15px; }
+  label { display: block; margin-bottom: 5px; font-weight: 500; color: #555; font-size: 16px; }
+  input[type="text"], input[type="date"], textarea {
+    width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;
+  }
+  textarea { min-height: 80px; resize: vertical; }
+  input:focus, textarea:focus { outline: none; border-color: #1976d2; }
+  .preview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+  .preview-item { position: relative; aspect-ratio: 1; }
+  .preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; }
+  .preview-item .remove { position: absolute; top: -5px; right: -5px; width: 24px; height: 24px; background: #f44336; color: white; border: none; border-radius: 50%; font-size: 16px; line-height: 1; cursor: pointer; }
+  .status { padding: 12px; border-radius: 6px; margin-bottom: 15px; font-weight: 500; text-align: center; }
+  .status.success { background: #e8f5e9; color: #2e7d32; }
+  .status.error { background: #ffebee; color: #c62828; }
+  .status.info { background: #e3f2fd; color: #1565c0; }
+  .log { background: #f5f5f5; border: 1px solid #ddd; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+  .hidden { display: none; }
+  .photo-badge { background: #1976d2; color: white; padding: 2px 8px; border-radius: 12px; font-size: 14px; margin-left: 8px; }
+  #bridgeFrame { display: none; width: 0; height: 0; border: none; position: absolute; }
+  .error-container { max-width: 500px; margin: 50px auto; background: #ffebee; border-radius: 10px; padding: 20px; text-align: center; color: #c62828; }
+  @media (max-width: 500px) {
+    body { padding: 10px; }
+    .container { border-radius: 8px; padding: 15px; }
+    .preview-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
 
-      /* Invisible iframe */
-      #gasBridge {
-        position: absolute;
-        width: 0;
-        height: 0;
-        border: 0;
-        clip: rect(0 0 0 0);
-      }
-    </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
 
-    <!-- Guard: read #gasid (or ?gasid) -->
-    <script>
-      (function guard() {
-        function getGasFromUrl() {
-          const h = new URLSearchParams(location.hash.slice(1));
-          const q = new URLSearchParams(location.search);
-          return h.get('gasid') || q.get('gasid') || '';
-        }
-        function idFrom(raw) {
-          if (!raw) return '';
-          if (/^https?:\/\//i.test(raw)) {
-            const parts = raw.split('/').filter(Boolean);
-            const sIdx = parts.indexOf('s');
-            if (sIdx !== -1 && parts[sIdx + 1]) return parts[sIdx + 1];
-            return raw;
-          }
-          return raw;
-        }
+<div id="mainContainer" class="hidden">
+  <div class="container">
+    <h1>📸 Receipt Capture</h1>
 
-        const stored = localStorage.getItem('receipt_gasid') || '';
-        const raw = getGasFromUrl() || stored;
+    <input id="filePicker" type="file" accept="image/*" capture="environment" multiple hidden>
 
-        if (!raw) {
-          document.documentElement.innerHTML = `
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>Receipt Capture – Setup</title>
-            <style>
-              body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f5f7;margin:0;min-height:100svh;display:grid;place-items:center}
-              .wrap{width:min(720px,92vw);background:#fff;padding:24px 20px;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
-              h1{margin:0 0 10px;font-size:22px}
-              p{color:#555;margin:8px 0}
-              input{width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:16px}
-              .row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-              button{padding:12px 16px;border:0;border-radius:10px;background:#1976d2;color:#fff;font-weight:700;cursor:pointer}
-              button.secondary{background:#6b7280}
-              code{background:#f1f3f5;padding:2px 6px;border-radius:6px}
-            </style>
-          </head>
-          <body>
-            <div class="wrap">
-              <h1>Set up endpoint</h1>
-              <p>Pass your Apps Script exec ID as <code>#gasid=YOUR_EXEC_ID</code> or paste below.</p>
-              <p>Example: <code>${location.origin + location.pathname}#gasid=abc123</code></p>
-              <input id="execInput" placeholder="Paste exec ID or full /exec URL">
-              <div class="row">
-                <button onclick="(function(){
-                  const v=document.getElementById('execInput').value.trim();
-                  if(!v){alert('Please paste an exec ID or URL');return;}
-                  localStorage.setItem('receipt_gasid',v);
-                  const id=(''+v).startsWith('http')?v.split('/').filter(Boolean).slice(-2,-1)[0]:v;
-                  location.hash='#gasid='+encodeURIComponent(id);location.reload();
-                })()">Save & Reload</button>
-                <button class="secondary" onclick="(function(){
-                  localStorage.removeItem('receipt_gasid');location.href=location.pathname;
-                })()">Clear</button>
-              </div>
-            </div>
-          </body>`;
-          return;
-        }
+    <button id="addBtn" class="btn btn-add">
+      📷 Add Photos
+      <span class="photo-badge hidden" id="photoBadge">0</span>
+    </button>
 
-        const GAS_ID = idFrom(raw);
-        window.WEBAPP_URL = `https://script.google.com/macros/s/${GAS_ID}/exec`;
-        window.BRIDGE_URL = window.WEBAPP_URL + '?bridge=1';
-        window.PARENT_ORIGIN = window.location.origin;
-      })();
-    </script>
-
-    <!-- jsPDF (correct SRI) -->
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-      integrity="sha512-FtU3UNlQiFn7MoXdBywlf+BoXJ2hvm1LHjQduRcbYJgT3XcqIbov9LC3V9w6orjOEl1DxRUfsAKVyijt3HeE+Q=="
-      crossorigin="anonymous"
-    ></script>
-  </head>
-
-  <body>
-    <div class="container" id="app" style="display: none">
-      <h1>📸 Receipt Capture</h1>
-
-      <input
-        id="filePicker"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        multiple
-        class="visually-hidden"
-      />
-
-      <label
-        id="addBtn"
-        class="btn btn-add"
-        for="filePicker"
-        role="button"
-        tabindex="0"
-        >Add Photos</label
-      >
-
-      <!-- photo counter -->
-      <span
-        id="photoBadge"
-        class="status info hidden"
-        style="
-          position: absolute;
-          top: 14px;
-          right: 18px;
-          padding: 2px 6px;
-          font-size: 12px;
-        "
-      ></span>
-
-      <div class="form-group">
-        <label for="description">Description *</label>
-        <textarea
-          id="description"
-          placeholder="Enter receipt description..."
-          required
-        ></textarea>
-      </div>
-
-      <div class="form-group">
-        <label for="date">Date</label>
-        <input type="date" id="date" />
-      </div>
-
-      <div class="preview-grid" id="previewGrid"></div>
-
-      <button id="submitBtn" class="btn btn-primary">Submit Receipt</button>
-
-      <div id="statusDiv" class="status hidden"></div>
-
-      <details id="logDetails" class="hidden">
-        <summary style="cursor: pointer; padding: 10px 0; color: #666"
-          >View Log</summary
-        >
-        <div class="log" id="logDiv"></div>
-      </details>
+    <div class="form-group">
+      <label for="description">Description *</label>
+      <textarea id="description" placeholder="Enter receipt description..." required></textarea>
     </div>
 
-    <!-- Hidden iframe bridge -->
-    <iframe id="gasBridge" src=""></iframe>
+    <div class="form-group">
+      <label for="date">Date</label>
+      <input type="date" id="date">
+    </div>
 
-    <script>
-      /* Early bail-out if we’re on the setup screen */
-      if (!window.BRIDGE_URL) return;
+    <div class="preview-grid" id="previewGrid"></div>
 
-      /***** ensure jsPDF present *****/
-      if (!window.jspdf || !window.jspdf.jsPDF) {
-        alert('Failed to load jsPDF library. Please refresh while online.');
-        throw new Error('jsPDF not loaded'); // stop here
-      }
+    <button id="submitBtn" class="btn btn-primary">Submit Receipt</button>
 
-      /***** DOM refs *****/
-      const { jsPDF } = window.jspdf;
-      const filePicker = document.getElementById('filePicker');
-      const previewGrid = document.getElementById('previewGrid');
-      const description = document.getElementById('description');
-      const dateInput = document.getElementById('date');
-      const submitBtn = document.getElementById('submitBtn');
-      const statusDiv = document.getElementById('statusDiv');
-      const logDiv = document.getElementById('logDiv');
-      const logDetails = document.getElementById('logDetails');
-      const photoBadge = document.getElementById('photoBadge');
-      const bridge = document.getElementById('gasBridge');
-      document.getElementById('app').style.display = '';
+    <div id="statusDiv" class="status hidden"></div>
 
-      /***** STATE *****/
-      let photos = [];
-      let bridgeReadyResolve, bridgeReadyReject;
-      const bridgeReady = new Promise((res, rej) => {
-        bridgeReadyResolve = res;
-        bridgeReadyReject = rej;
-      });
-      const BRIDGE_ORIGIN = (() => {
-        try {
-          return new URL(window.BRIDGE_URL).origin;
-        } catch (e) {
-          return 'https://script.google.com';
+    <details id="logDetails" class="hidden">
+      <summary style="cursor: pointer; padding: 10px 0; color: #666;">View Log</summary>
+      <div class="log" id="logDiv"></div>
+    </details>
+  </div>
+</div>
+
+<div id="errorContainer" class="error-container hidden">
+  <h2>Configuration Error</h2>
+  <p>Please provide a Google Apps Script ID in the URL</p>
+  <p style="font-size: 14px; margin-top: 10px;">Example: #gasid=YOUR_SCRIPT_ID</p>
+</div>
+
+<iframe id="bridgeFrame"></iframe>
+
+<script>
+const {jsPDF} = window.jspdf;
+
+// Elements
+const mainContainer = document.getElementById('mainContainer');
+const errorContainer = document.getElementById('errorContainer');
+const bridgeFrame = document.getElementById('bridgeFrame');
+const filePicker = document.getElementById('filePicker');
+const addBtn = document.getElementById('addBtn');
+const previewGrid = document.getElementById('previewGrid');
+const description = document.getElementById('description');
+const dateInput = document.getElementById('date');
+const submitBtn = document.getElementById('submitBtn');
+const statusDiv = document.getElementById('statusDiv');
+const logDiv = document.getElementById('logDiv');
+const logDetails = document.getElementById('logDetails');
+const photoBadge = document.getElementById('photoBadge');
+
+// State
+let photos = [];
+let gasScriptId = null;
+let bridgeReady = false;
+
+// Parse GAS Script ID from URL hash
+function parseGasId() {
+  const hash = window.location.hash;
+  const match = hash.match(/gasid=([^&]+)/);
+  return match ? match[1] : null;
+}
+
+// Initialize
+function init() {
+  gasScriptId = parseGasId();
+  
+  if (!gasScriptId) {
+    errorContainer.classList.remove('hidden');
+    return;
+  }
+
+  // Construct GAS URL and load iframe
+  const gasUrl = `https://script.google.com/macros/s/${gasScriptId}/exec?mode=bridge`;
+  bridgeFrame.src = gasUrl;
+  
+  // Show main container
+  mainContainer.classList.remove('hidden');
+  
+  // Set today's date
+  dateInput.value = new Date().toISOString().split('T')[0];
+  
+  // Setup event listeners
+  setupEventListeners();
+  
+  log('Initializing bridge connection...');
+}
+
+// Setup event listeners
+function setupEventListeners() {
+  addBtn.addEventListener('click', () => filePicker.click());
+
+  filePicker.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      photos.push(file);
+      addPreviewItem(file, photos.length - 1);
+      log(`Added: ${file.name} (${Math.round(file.size/1024)}KB)`);
+    });
+    updatePhotoBadge();
+    filePicker.value = '';
+  });
+
+  submitBtn.addEventListener('click', handleSubmit);
+
+  // Listen for messages from iframe
+  window.addEventListener('message', handleBridgeMessage);
+}
+
+// Handle messages from bridge iframe
+function handleBridgeMessage(event) {
+  // Verify origin is from Google Scripts
+  if (!event.origin.startsWith('https://script.google.com')) {
+    return;
+  }
+
+  const data = event.data;
+  
+  if (data.type === 'bridge_ready') {
+    bridgeReady = true;
+    log('Bridge connection established');
+  } else if (data.type === 'upload_response') {
+    handleUploadResponse(data.payload);
+  }
+}
+
+// Handle upload response from bridge
+function handleUploadResponse(response) {
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Submit Receipt';
+
+  if (response.ok === false) {
+    const msg = response.error
+      ? `${response.error.code || 'ERROR'}: ${response.error.message}`
+      : 'Upload failed';
+    showStatus('❌ ' + msg, 'error');
+    log('Server error: ' + JSON.stringify(response));
+    return;
+  }
+
+  showStatus(`✅ Success! Receipt ID: ${response.receipt_id}`, 'success');
+  log(`Success: receipt_id=${response.receipt_id}, fileId=${response.fileId}, elapsed_ms=${response.elapsed_ms}`);
+
+  // Reset form after delay
+  setTimeout(() => {
+    photos = [];
+    rebuildPreviews();
+    description.value = '';
+    dateInput.value = new Date().toISOString().split('T')[0];
+    updatePhotoBadge();
+  }, 1200);
+}
+
+// Functions from original
+function addPreviewItem(file, index) {
+  const item = document.createElement('div');
+  item.className = 'preview-item';
+  item.dataset.index = index;
+
+  const img = document.createElement('img');
+  img.src = URL.createObjectURL(file);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'remove';
+  removeBtn.textContent = '×';
+  removeBtn.onclick = () => removePhoto(index);
+
+  item.appendChild(img);
+  item.appendChild(removeBtn);
+  previewGrid.appendChild(item);
+}
+
+function removePhoto(index) {
+  photos.splice(index, 1);
+  rebuildPreviews();
+  updatePhotoBadge();
+  log(`Removed photo ${index + 1}`);
+}
+
+function rebuildPreviews() {
+  previewGrid.innerHTML = '';
+  photos.forEach((photo, i) => addPreviewItem(photo, i));
+}
+
+function updatePhotoBadge() {
+  if (photos.length > 0) {
+    photoBadge.textContent = photos.length;
+    photoBadge.classList.remove('hidden');
+  } else {
+    photoBadge.classList.add('hidden');
+  }
+}
+
+function showStatus(message, type) {
+  statusDiv.textContent = message;
+  statusDiv.className = `status ${type}`;
+  statusDiv.classList.remove('hidden');
+  if (type !== 'info') setTimeout(() => statusDiv.classList.add('hidden'), 5000);
+}
+
+function log(message) {
+  const time = new Date().toLocaleTimeString();
+  logDiv.textContent += `[${time}] ${message}\n`;
+  logDiv.scrollTop = logDiv.scrollHeight;
+  logDetails.classList.remove('hidden');
+}
+
+async function handleSubmit() {
+  if (photos.length === 0) {
+    showStatus('Please add at least one photo', 'error');
+    return;
+  }
+  if (!description.value.trim()) {
+    showStatus('Description is required', 'error');
+    description.focus();
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Processing...';
+
+  try {
+    log('Starting upload...');
+    showStatus('Building PDF...', 'info');
+
+    const pdf = new jsPDF();
+
+    for (let i = 0; i < photos.length; i++) {
+      log(`Processing image ${i + 1}/${photos.length}`);
+      showStatus(`Processing image ${i + 1} of ${photos.length}...`, 'info');
+
+      const dataUrl = await resizeImage(photos[i]);
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise(resolve => img.onload = resolve);
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const ratio = Math.min(pageWidth / img.width, pageHeight / img.height);
+      const width = img.width * ratio;
+      const height = img.height * ratio;
+      const x = (pageWidth - width) / 2;
+      const y = (pageHeight - height) / 2;
+
+      if (i > 0) pdf.addPage();
+      pdf.addImage(dataUrl, 'JPEG', x, y, width, height);
+    }
+
+    log('PDF ready, sending via bridge...');
+    showStatus('Uploading to Drive...', 'info');
+
+    const payload = {
+      description: description.value.trim(),
+      date: dateInput.value,
+      pdf_base64: pdf.output('datauristring').split(',')[1]
+    };
+
+    // Send payload to bridge iframe
+    bridgeFrame.contentWindow.postMessage({
+      type: 'upload_request',
+      payload: payload
+    }, 'https://script.google.com');
+
+  } catch (error) {
+    showStatus('❌ Processing failed', 'error');
+    log(`Error: ${error.message}`);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Receipt';
+  }
+}
+
+async function resizeImage(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const maxSize = 1080;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height && width > maxSize) {
+          height = (maxSize / width) * height;
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = (maxSize / height) * width;
+          height = maxSize;
         }
-      })();
-      bridge.src = window.BRIDGE_URL;
 
-      /***** default date *****/
-      function setDefaultDate() {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        const iso = now.toISOString().slice(0, 10);
-        dateInput.value = iso;
-        dateInput.setAttribute('value', iso);
-      }
-      setDefaultDate();
-      window.addEventListener('pageshow', () => {
-        if (!dateInput.value) setDefaultDate();
-      });
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
 
-      /***** bridge messaging *****/
-      const handshakeNonce = Math.random().toString(36).slice(2);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
-      window.addEventListener('message', (ev) => {
-        if (ev.origin !== BRIDGE_ORIGIN) return;
-        const msg = ev.data || {};
+// Initialize on load
+init();
+</script>
 
-        if (msg.type === 'bridge:ready' && msg.nonce === handshakeNonce) {
-          bridgeReadyResolve();
-          return;
-        }
-        if (msg.type === 'upload:ok') {
-          showStatus(`✅ Success! Receipt ID: ${msg.receipt_id}`, 'success');
-          log(`Success: receipt_id=${msg.receipt_id}, fileId=${msg.fileId}`);
-          setTimeout(resetForm, 1200);
-        }
-        if (msg.type === 'upload:err') {
-          showStatus('❌ ' + (msg.error || 'Upload failed'), 'error');
-          log('Server error: ' + (msg.error || '(no message)'));
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Receipt';
-        }
-      });
-
-      bridge.addEventListener('load', () => {
-        try {
-          bridge.contentWindow.postMessage(
-            { type: 'hello', nonce: handshakeNonce, allow: window.PARENT_ORIGIN },
-            BRIDGE_ORIGIN
-          );
-        } catch (e) {
-          bridgeReadyReject(e);
-        }
-        setTimeout(() => {
-          bridgeReadyReject(new Error('Bridge handshake timed out'));
-        }, 8000);
-      });
-
-      function sendViaIframe(payload) {
-        return new Promise(async (resolve, reject) => {
-          try {
-            await bridgeReady;
-            const onMsg = (ev) => {
-              if (ev.origin !== BRIDGE_ORIGIN) return;
-              const d = ev.data || {};
-              if (d.type === 'upload:ok') {
-                window.removeEventListener('message', onMsg);
-                resolve(d);
-              }
-              if (d.type === 'upload:err') {
-                window.removeEventListener('message', onMsg);
-                reject(new Error(d.error || 'Upload failed'));
-              }
-            };
-            window.addEventListener('message', onMsg);
-            bridge.contentWindow.postMessage(
-              { type: 'upload', payload },
-              BRIDGE_ORIGIN
-            );
-          } catch (err) {
-            reject(err);
-          }
-        });
-      }
-
-      /***** UI helpers *****/
-      function showStatus(message, type) {
-        statusDiv.textContent = message;
-        statusDiv.className = `status ${type}`;
-        statusDiv.classList.remove('hidden');
-        if (type !== 'info')
-          setTimeout(() => statusDiv.classList.add('hidden'), 5000);
-      }
-      function log(message) {
-        const time = new Date().toLocaleTimeString();
-        logDiv.textContent += `[${time}] ${message}\n`;
-        logDiv.scrollTop = logDiv.scrollHeight;
-        logDetails.classList.remove('hidden');
-      }
-      function resetForm() {
-        photos = [];
-        rebuildPreviews();
-        description.value = '';
-        setDefaultDate();
-        updatePhotoBadge();
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Receipt';
-      }
-
-      /***** image helpers *****/
-      function addPreviewItem(file, index) {
-        const item = document.createElement('div');
-        item.className = 'preview-item';
-        item.dataset.index = index;
-
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove';
-        removeBtn.textContent = '×';
-        removeBtn.onclick = () => removePhoto(index);
-
-        item.appendChild(img);
-        item.appendChild(removeBtn);
-        previewGrid.appendChild(item);
-      }
-      function removePhoto(index) {
-        photos.splice(index, 1);
-        rebuildPreviews();
-        updatePhotoBadge();
-        log(`Removed photo ${index + 1}`);
-      }
-      function rebuildPreviews() {
-        previewGrid.innerHTML = '';
-        photos.forEach((p, i) => addPreviewItem(p, i));
-      }
-      function updatePhotoBadge() {
-        if (photos.length) {
-          photoBadge.textContent = photos.length;
-          photoBadge.classList.remove('hidden');
-        } else {
-          photoBadge.classList.add('hidden');
-        }
-      }
-      function resizeImage(file) {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
-              const max = 1080;
-              let { width, height } = img;
-              if (width > height && width > max) {
-                height = (max / width) * height;
-                width = max;
-              } else if (height > max) {
-                width = (max / height) * width;
-                height = max;
-              }
-              canvas.width = width;
-              canvas.height = height;
-              ctx.drawImage(img, 0, 0, width, height);
-              resolve(canvas.toDataURL('image/jpeg', 0.8));
-            };
-            img.src = e.target.result;
-          };
-          reader.readAsDataURL(file);
-        });
-      }
-
-      /***** events *****/
-      filePicker.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        files.forEach((f) => {
-          photos.push(f);
-          addPreviewItem(f, photos.length - 1);
-          log(`Added: ${f.name} (${Math.round(f.size / 1024)} KB)`);
-        });
-        updatePhotoBadge();
-        filePicker.value = '';
-      });
-
-      submitBtn.addEventListener('click', handleSubmit);
-      async function handleSubmit() {
-        if (!photos.length) {
-          showStatus('Please add at least one photo', 'error');
-          return;
-        }
-        if (!description.value.trim()) {
-          showStatus('Description is required', 'error');
-          description.focus();
-          return;
-        }
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Processing…';
-
-        try {
-          log('Building PDF…');
-          showStatus('Building PDF…', 'info');
-          const pdf = new jsPDF();
-          for (let i = 0; i < photos.length; i++) {
-            log(`Processing image ${i + 1}/${photos.length}`);
-            showStatus(`Processing image ${i + 1}…`, 'info');
-            const dataUrl = await resizeImage(photos[i]);
-            const img = new Image();
-            img.src = dataUrl;
-            await new Promise((r) => (img.onload = r));
-            const pw = pdf.internal.pageSize.getWidth();
-            const ph = pdf.internal.pageSize.getHeight();
-            const ratio = Math.min(pw / img.width, ph / img.height);
-            const w = img.width * ratio;
-            const h = img.height * ratio;
-            const x = (pw - w) / 2;
-            const y = (ph - h) / 2;
-            if (i) pdf.addPage();
-            pdf.addImage(dataUrl, 'JPEG', x, y, w, h);
-          }
-          log('PDF ready, sending…');
-          showStatus('Uploading…', 'info');
-          const payload = {
-            description: description.value.trim(),
-            date: dateInput.value,
-            pdf_base64: pdf.output('datauristring').split(',')[1],
-          };
-          await sendViaIframe(payload);
-        } catch (err) {
-          showStatus('❌ Upload failed', 'error');
-          log(`Error: ${err.message}`);
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Receipt';
-        }
-      }
-    </script>
-  </body>
+</body>
 </html>
