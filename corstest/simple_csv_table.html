@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Table</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div id="table-container"></div>
+
+    <script>
+        // Replace this URL with your Google Sheets CSV export URL
+        const CSV_URL = 'https://api.codetabs.com/v1/proxy?quest=https://docs.google.com/spreadsheets/d/1ypnlRZFPgKYbVRWFwuRfdLUOmPbTYYrjBz2IqcODP5w/export?format=csv';
+
+        async function loadCSV() {
+            try {
+                const response = await fetch(CSV_URL);
+                const csvText = await response.text();
+                
+                const rows = csvText.split('\n').map(row => {
+                    const cells = [];
+                    let current = '';
+                    let inQuotes = false;
+                    
+                    for (let i = 0; i < row.length; i++) {
+                        const char = row[i];
+                        if (char === '"') {
+                            inQuotes = !inQuotes;
+                        } else if (char === ',' && !inQuotes) {
+                            cells.push(current);
+                            current = '';
+                        } else {
+                            current += char;
+                        }
+                    }
+                    cells.push(current);
+                    return cells;
+                });
+
+                let html = '<table>';
+                rows.forEach((row, index) => {
+                    if (index === 0) {
+                        html += '<thead><tr>';
+                        row.forEach(cell => {
+                            html += `<th>${cell}</th>`;
+                        });
+                        html += '</tr></thead><tbody>';
+                    } else if (row.some(cell => cell.trim())) {
+                        html += '<tr>';
+                        row.forEach(cell => {
+                            html += `<td>${cell}</td>`;
+                        });
+                        html += '</tr>';
+                    }
+                });
+                html += '</tbody></table>';
+
+                document.getElementById('table-container').innerHTML = html;
+            } catch (error) {
+                document.getElementById('table-container').innerHTML = 'Error loading data';
+            }
+        }
+
+        loadCSV();
+    </script>
+</body>
+</html>
