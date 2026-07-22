@@ -2,6 +2,7 @@ const DB_NAME = 'rolling-budget';
 const DB_VERSION = 1;
 const BACKUP_FORMAT = 'rolling-budget-backup';
 let installPrompt = null;
+let showAllEntries = false;
 
 window.addEventListener('beforeinstallprompt', event => {
   event.preventDefault();
@@ -109,6 +110,13 @@ async function getEntries(database) {
   return entries.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '') || a.id.localeCompare(b.id));
 }
 
+async function deleteEntry(database, entryId) {
+  const transaction = database.transaction('ledger', 'readwrite');
+  const finished = transactionDone(transaction);
+  transaction.objectStore('ledger').delete(entryId);
+  await finished;
+}
+
 async function applyDailyIncrement(database) {
   const transaction = database.transaction(['meta', 'ledger'], 'readwrite');
   const finished = transactionDone(transaction);
@@ -170,7 +178,16 @@ function entryRow(entry) {
   const amount = document.createElement('strong');
   amount.className = `entry-amount ${entry.amountCents < 0 ? 'negative' : 'positive'}`;
   amount.textContent = money(entry.amountCents);
-  item.append(icon, copy, amount);
+  const actions = document.createElement('div');
+  actions.className = 'entry-actions';
+  const deleteButton = document.createElement('button');
+  deleteButton.type = 'button';
+  deleteButton.className = 'delete-entry';
+  deleteButton.dataset.entryId = entry.id;
+  deleteButton.setAttribute('aria-label', 'Delete ' + title.textContent + ' entry');
+  deleteButton.textContent = 'Delete';
+  actions.append(amount, deleteButton);
+  item.append(icon, copy, actions);
   return item;
 }
 
@@ -181,6 +198,9 @@ async function renderEntryPage(database) {
   balanceElement.textContent = money(balance);
   balanceElement.classList.toggle('negative', balance < 0);
   document.querySelector('#daily-rate').textContent = `${money(config.dailyIncrementCents)} added each day`;
+  const toggle = document.querySelector('#activity-toggle');
+  toggle.hidden = entries.length <= 5;
+  toggle.textContent = showAllEntries ? 'Show recent' : 'Show all (' + entries.length + ')';
   const recent = document.querySelector('#recent');
   recent.replaceChildren();
   if (!entries.length) {
@@ -192,7 +212,8 @@ async function renderEntryPage(database) {
   }
   const list = document.createElement('ol');
   list.className = 'ledger';
-  for (const entry of entries.slice(-5).reverse()) list.append(entryRow(entry));
+  const visibleEntries = showAllEntries ? entries : entries.slice(-5);
+  for (const entry of [...visibleEntries].reverse()) list.append(entryRow(entry));
   recent.append(list);
 }
 
@@ -350,6 +371,23 @@ async function restoreBackup(database, file) {
 
 async function entryPage(database) {
   await renderEntryPage(database);
+  document.querySelector('#activity-toggle').addEventListener('click', async () => {
+    showAllEntries = !showAllEntries;
+    await renderEntryPage(database);
+  });
+  document.querySelector('#recent').addEventListener('click', async event => {
+    const button = event.target.closest('.delete-entry');
+    if (!button || !window.confirm('Delete this ledger entry? Your balance will update immediately.')) return;
+    button.disabled = true;
+    try {
+      await deleteEntry(database, button.dataset.entryId);
+      showNotice('Transaction deleted.');
+      await renderEntryPage(database);
+    } catch (error) {
+      button.disabled = false;
+      showNotice(error.message || 'Could not delete the transaction.', true);
+    }
+  });
   document.querySelector('#expense-form').addEventListener('submit', async event => {
     event.preventDefault();
     const form = event.currentTarget;
