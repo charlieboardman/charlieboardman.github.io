@@ -352,11 +352,12 @@ async function entryPage(database) {
   await renderEntryPage(database);
   document.querySelector('#expense-form').addEventListener('submit', async event => {
     event.preventDefault();
-    const button = event.currentTarget.querySelector('button');
+    const form = event.currentTarget;
+    const button = form.querySelector('button');
     button.disabled = true;
     try {
-      await addExpense(database, event.currentTarget);
-      event.currentTarget.reset();
+      await addExpense(database, form);
+      form.reset();
       showNotice('Expense saved.');
       await renderEntryPage(database);
       navigator.storage?.persist?.();
@@ -372,10 +373,11 @@ async function settingsPage(database) {
   await renderSettingsPage(database);
   document.querySelector('#settings-form').addEventListener('submit', async event => {
     event.preventDefault();
-    const button = event.currentTarget.querySelector('button');
+    const form = event.currentTarget;
+    const button = form.querySelector('button');
     button.disabled = true;
     try {
-      await saveSettings(database, event.currentTarget);
+      await saveSettings(database, form);
       showNotice('Daily increment saved.');
       await renderSettingsPage(database);
       navigator.storage?.persist?.();
@@ -388,11 +390,12 @@ async function settingsPage(database) {
   document.querySelector('#download-csv').addEventListener('click', () => downloadCsv(database).catch(error => showNotice(error.message, true)));
   document.querySelector('#balance-form').addEventListener('submit', async event => {
     event.preventDefault();
-    const button = event.currentTarget.querySelector('button');
+    const form = event.currentTarget;
+    const button = form.querySelector('button');
     button.disabled = true;
     try {
-      await setBalance(database, event.currentTarget);
-      event.currentTarget.reset();
+      await setBalance(database, form);
+      form.reset();
       showNotice('Balance adjusted.');
       navigator.storage?.persist?.();
     } catch (error) {
@@ -404,11 +407,12 @@ async function settingsPage(database) {
   document.querySelector('#download-backup').addEventListener('click', () => downloadBackup(database).catch(error => showNotice(error.message, true)));
   document.querySelector('#restore-form').addEventListener('submit', async event => {
     event.preventDefault();
-    const button = event.currentTarget.querySelector('button');
+    const form = event.currentTarget;
+    const button = form.querySelector('button');
     button.disabled = true;
     try {
-      await restoreBackup(database, event.currentTarget.elements.backup.files[0]);
-      event.currentTarget.reset();
+      await restoreBackup(database, form.elements.backup.files[0]);
+      form.reset();
       showNotice('Backup restored.');
       await applyDailyIncrement(database);
       await renderSettingsPage(database);
