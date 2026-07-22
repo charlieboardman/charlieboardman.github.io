@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#18392b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Settings · Rolling Budget</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="settings">
+<main class="shell">
+  <header class="page-header"><a class="back" href="index.html" aria-label="Back">←</a><div><span class="eyebrow">Rolling Budget</span><h1>Settings</h1></div></header>
+  <div id="notice" aria-live="polite"></div>
+
+  <section class="card">
+    <h2>Daily increment</h2>
+    <p class="help">Each new calendar day adds this amount. Missed days are caught up the next time you open the app.</p>
+    <form id="settings-form">
+      <label>Amount per day<div class="money-input"><span>$</span><input name="dailyIncrement" type="number" inputmode="decimal" min="0" step="0.01" value="0.00" required></div></label>
+      <label>Timezone<select name="timezone" required></select></label>
+      <label class="check" id="credit-today-row"><input type="checkbox" name="creditToday" value="1"><span>Add today’s increment now</span></label>
+      <button type="submit">Save increment</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Set my balance to</h2>
+    <p class="help">Cheat mode. This adds a visible adjustment to the ledger; it does not erase your history.</p>
+    <form id="balance-form">
+      <label>New balance<div class="money-input"><span>$</span><input name="balance" type="number" inputmode="decimal" step="0.01" placeholder="0.00" required></div></label>
+      <button type="submit">Set balance</button>
+    </form>
+  </section>
+
+  <section class="card download-card">
+    <div><h2>Complete log</h2><p class="help">Download every increment, transaction, and balance adjustment as a CSV file.</p></div>
+    <button class="secondary-button" id="download-csv" type="button">Download CSV</button>
+  </section>
+
+  <section class="card download-card">
+    <div><h2>Backup</h2><p class="help">Your data exists only in this browser. Save a backup regularly. Restoring replaces the current budget.</p></div>
+    <button class="secondary-button" id="download-backup" type="button">Download backup</button>
+    <form id="restore-form">
+      <label>Backup file<input type="file" name="backup" accept="application/json,.json" required></label>
+      <label class="check"><input type="checkbox" name="confirm" required><span>I understand this replaces my current budget</span></label>
+      <button class="danger-button" type="submit">Restore and replace data</button>
+    </form>
+  </section>
+
+  <section class="card install-card">
+    <h2>Install this app</h2>
+    <button class="secondary-button" id="install-button" type="button" hidden>Install app</button>
+    <p class="help"><strong>iPhone or iPad:</strong> open in Safari, tap Share, then “Add to Home Screen.”</p>
+    <p class="help"><strong>Android:</strong> open the browser menu and tap “Install app” or “Add to Home screen.”</p>
+  </section>
+
+  <p class="fine-print">Stored only on this device and browser. No account, server, or synchronization.</p>
+</main>
+<noscript><p class="noscript">Rolling Budget needs JavaScript to store your budget on this device.</p></noscript>
+<script type="module" src="app.js"></script>
+</body>
+</html>
