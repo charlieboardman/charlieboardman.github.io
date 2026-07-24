@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#152525" />
+    <meta name="description" content="An exploratory atlas of village dance traditions across Greece and Asia Minor." />
+    <title>Dance Atlas — A living dance atlas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Gloock&display=swap" rel="stylesheet" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23172725'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='24' fill='%23f3efe7'%3EDA%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#archive-panel">Skip to archive</a>
+    <div class="app-shell">
+      <header class="site-header">
+        <a class="brand" href="#" aria-label="Dance Atlas home">
+          <span class="brand-mark" aria-hidden="true">DA</span>
+          <span class="brand-name">Dance Atlas</span>
+        </a>
+        <p class="tagline">A living atlas of dance, place &amp; memory</p>
+        <button class="about-button" id="about-button" type="button" aria-expanded="false" aria-controls="about-drawer">
+          <span>About the archive</span><span aria-hidden="true">↗</span>
+        </button>
+      </header>
+
+      <main class="atlas">
+        <section class="map-stage" aria-label="Interactive dance map">
+          <div id="map"></div>
+          <div class="map-wash" aria-hidden="true"></div>
+
+          <div class="language-control" aria-label="Map label language">
+            <span class="language-label">Map labels</span>
+            <div class="language-options" id="language-options">
+              <button class="language-button is-active" type="button" data-language="en" aria-pressed="true">English</button>
+              <button class="language-button" type="button" data-language="el" lang="el" aria-pressed="false">Ελληνικά</button>
+            </div>
+          </div>
+
+          <nav class="region-tray" aria-label="Browse regions">
+            <span class="tray-label">Browse regions</span>
+            <div class="region-list" id="region-list" role="list"></div>
+          </nav>
+
+          <button class="mobile-archive-button" id="mobile-archive-button" type="button">
+            Open archive <span id="mobile-count">00</span>
+          </button>
+        </section>
+
+        <aside class="archive-panel" id="archive-panel" aria-label="Village archive">
+          <div class="panel-header">
+            <div>
+              <h2 id="panel-title">All villages</h2>
+            </div>
+            <button class="panel-close" id="panel-close" type="button" aria-label="Close archive">×</button>
+          </div>
+
+          <div class="search-wrap">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg>
+            <label class="sr-only" for="village-search">Search villages</label>
+            <input id="village-search" type="search" placeholder="Search villages or dances" autocomplete="off" />
+          </div>
+
+          <div class="panel-scroll">
+            <div id="village-list" class="archive-tree"></div>
+            <article id="village-detail" class="village-detail" hidden></article>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <div class="about-drawer" id="about-drawer" aria-hidden="true">
+      <button class="about-close" id="about-close" aria-label="Close about panel">×</button>
+      <p class="eyebrow">About this project</p>
+      <h2>A map shaped by the people who remember.</h2>
+      <p>This first-draft archive is a framework for gathering village histories, dance names and community knowledge across Greece and Asia Minor.</p>
+      <p class="fine-print">All current entries are illustrative placeholders.</p>
+    </div>
+    <div class="drawer-scrim" id="drawer-scrim"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="content/catalog.generated.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

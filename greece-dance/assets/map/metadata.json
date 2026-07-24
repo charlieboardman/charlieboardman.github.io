@@ -1,0 +1,18 @@
+{
+  "bounds": {
+    "south": 34,
+    "west": 18,
+    "north": 43.5,
+    "east": 34.5
+  },
+  "minZoom": 5,
+  "maxNativeZoom": 9,
+  "tileSize": 256,
+  "tilePixelRatio": 2,
+  "languages": [
+    "en",
+    "el"
+  ],
+  "placeSource": "map-layer/places.csv",
+  "placeCount": 11
+}
