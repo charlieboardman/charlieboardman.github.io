@@ -1,8 +1,16 @@
 (() => {
   const data = window.DANCE_ATLAS_DATA || { regions: [] };
   const regions = data.regions;
-  const villages = regions.flatMap((region) =>
-    (region.subregions || []).flatMap((subregion) =>
+  const villages = regions.flatMap((region) => [
+    ...(region.villages || []).map((village) => ({
+      ...village,
+      regionId: region.id,
+      regionName: region.name,
+      regionColor: region.color,
+      subregionId: null,
+      subregionName: ""
+    })),
+    ...(region.subregions || []).flatMap((subregion) =>
       (subregion.villages || []).map((village) => ({
         ...village,
         regionId: region.id,
@@ -12,7 +20,7 @@
         subregionName: subregion.name
       }))
     )
-  );
+  ]);
   const villageById = new Map(villages.map((village) => [village.id, village]));
 
   const els = {
@@ -185,6 +193,9 @@
 
   function filterRegion(region, query) {
     const regionMatches = Boolean(query) && region.name.toLowerCase().includes(query);
+    const regionVillages = villages.filter((village) =>
+      village.regionId === region.id && !village.subregionId && (regionMatches || villageMatches(village, query))
+    );
     const subregions = (region.subregions || []).map((subregion) => {
       const subregionMatches = regionMatches || (Boolean(query) && subregion.name.toLowerCase().includes(query));
       const subregionVillages = villages.filter((village) =>
@@ -194,8 +205,8 @@
       return { ...subregion, villages: subregionVillages };
     }).filter(Boolean);
 
-    if (query && !regionMatches && !subregions.length) return null;
-    return { ...region, subregions };
+    if (query && !regionMatches && !regionVillages.length && !subregions.length) return null;
+    return { ...region, villages: regionVillages, subregions };
   }
 
   function villageMatches(village, query) {
@@ -208,7 +219,8 @@
   }
 
   function renderRegionTree(region, searching) {
-    const count = region.subregions.reduce((total, subregion) => total + subregion.villages.length, 0);
+    const count = region.villages.length
+      + region.subregions.reduce((total, subregion) => total + subregion.villages.length, 0);
     const isOpen = searching || activeRegion === region.id || expandedRegions.has(region.id);
     return `
       <details class="tree-region" data-folder="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}"${isOpen ? " open" : ""}>
@@ -219,8 +231,9 @@
           <span class="tree-count" aria-label="${count} ${count === 1 ? "village" : "villages"}">${count}</span>
         </summary>
         <div class="tree-region-children">
+          ${region.villages.length ? `<div class="tree-region-villages">${region.villages.map(renderVillageRow).join("")}</div>` : ""}
           ${region.subregions.map((subregion) => renderSubregionTree(region, subregion, searching)).join("")}
-          ${region.subregions.length ? "" : '<p class="tree-empty">No subregions yet</p>'}
+          ${region.villages.length || region.subregions.length ? "" : '<p class="tree-empty">No village records yet</p>'}
         </div>
       </details>
     `;

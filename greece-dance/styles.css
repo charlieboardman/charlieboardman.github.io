@@ -98,6 +98,8 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 .tree-label { min-width: 0; overflow-wrap: anywhere; }
 .tree-count { justify-self: end; min-width: 22px; color: #7a8782; font-size: 9px; font-weight: 500; text-align: right; }
 .tree-region-children { padding-bottom: 5px; }
+.tree-region-villages { margin-left: 16px; border-left: 1px solid rgba(23,39,37,.12); }
+.tree-region-villages .tree-village { width: calc(100% - 12px); margin-left: 12px; }
 .tree-villages { margin-left: 34px; border-left: 1px solid rgba(23,39,37,.12); }
 .tree-village { position: relative; display: grid; grid-template-columns: 8px minmax(0, 1fr) 18px; gap: 11px; align-items: center; width: calc(100% - 18px); min-height: 44px; margin-left: 18px; padding: 7px 3px 7px 0; border: 0; border-top: 1px solid rgba(23,39,37,.1); background: transparent; text-align: left; cursor: pointer; }
 .tree-villages .tree-village { width: calc(100% - 12px); margin-left: 12px; }

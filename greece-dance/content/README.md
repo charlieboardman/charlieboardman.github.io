@@ -20,9 +20,22 @@ content/regions/
         coordinates.json
 ```
 
-That example renders as **Aegean → Chios → Pyrgi**. Use lowercase directory names
-and hyphens between words, such as `western-macedonia` or `nea-vyssa`. Unicode
-directory names are supported when spelling matters; `çeşme` renders as **Çeşme**.
+That example renders as **Aegean → Chios → Pyrgi**. Villages that do not belong to
+a subregion can instead live directly inside their region:
+
+```text
+content/regions/
+  aegean/
+    region.json
+    pyrgi/
+      info.md
+      coordinates.json
+```
+
+That example renders as **Aegean → Pyrgi**. A region may contain direct villages,
+subregions or both. Use lowercase directory names and hyphens between words, such
+as `western-macedonia` or `nea-vyssa`. Unicode directory names are supported when
+spelling matters; `çeşme` renders as **Çeşme**.
 
 ## Region settings
 
@@ -41,13 +54,14 @@ file contains only its tray color and the map bounds used when focusing that reg
 }
 ```
 
-Subregions need no configuration file. Creating a directory directly inside a
-region creates the subregion.
+Subregions need no configuration file. A directory directly inside a region is
+recognized as a village when it contains both village source files; otherwise it
+is treated as a subregion.
 
 ## Village content
 
-Each village is a directory inside a subregion and contains exactly two source
-files:
+Each village is a directory inside a region or subregion and contains exactly two
+source files:
 
 - `info.md` contains the text rendered beneath the village name. Standard Markdown
   formatting such as paragraphs, headings, emphasis, lists and links is supported.
@@ -64,8 +78,8 @@ files:
 
 The village name and internal ID come from its directory path. There are no name,
 ID, summary, notes, dance, location or review fields to maintain. Search checks the
-village, subregion and region names plus the contents of `info.md`, so dance names
-written in the Markdown remain searchable.
+village, optional subregion and region names plus the contents of `info.md`, so
+dance names written in the Markdown remain searchable.
 
 ## Rebuild
 

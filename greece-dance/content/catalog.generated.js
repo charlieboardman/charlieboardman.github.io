@@ -15,6 +15,7 @@ window.DANCE_ATLAS_DATA = {
           29
         ]
       ],
+      "villages": [],
       "subregions": [
         {
           "id": "chios",
@@ -64,6 +65,7 @@ window.DANCE_ATLAS_DATA = {
           33.5
         ]
       ],
+      "villages": [],
       "subregions": [
         {
           "id": "western-anatolia",
@@ -97,6 +99,7 @@ window.DANCE_ATLAS_DATA = {
           24.1
         ]
       ],
+      "villages": [],
       "subregions": [
         {
           "id": "attica",
@@ -130,6 +133,7 @@ window.DANCE_ATLAS_DATA = {
           21.6
         ]
       ],
+      "villages": [],
       "subregions": [
         {
           "id": "northern-pindus",
@@ -179,6 +183,7 @@ window.DANCE_ATLAS_DATA = {
           24.8
         ]
       ],
+      "villages": [],
       "subregions": [
         {
           "id": "pella",
@@ -228,6 +233,7 @@ window.DANCE_ATLAS_DATA = {
           23.6
         ]
       ],
+      "villages": [],
       "subregions": [
         {
           "id": "arcadia",
@@ -261,6 +267,7 @@ window.DANCE_ATLAS_DATA = {
           29.5
         ]
       ],
+      "villages": [],
       "subregions": [
         {
           "id": "evros",
