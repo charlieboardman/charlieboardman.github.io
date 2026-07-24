@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Cash Voucher Batch Printer</title>
+  <style>
+    :root{
+      --bg:#f4f5f7; --panel:#fff; --ink:#1f2328; --muted:#666; --line:#d0d4d9;
+      --accent:#1f6feb; --ok:#1a7f37; --err:#cf222e;
+    }
+    *{box-sizing:border-box;}
+    body{
+      font-family:Arial,Helvetica,sans-serif;
+      margin:0; padding:24px; background:var(--bg); color:var(--ink);
+      font-size:15px; line-height:1.45;
+    }
+    h1{font-size:20px; margin:0 0 4px;}
+    .sub{color:var(--muted); margin:0 0 18px; font-size:13px;}
+    .panel{
+      background:var(--panel); border:1px solid var(--line); border-radius:8px;
+      padding:16px 18px; max-width:760px; margin-bottom:18px;
+    }
+    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; align-items:end;}
+    @media (max-width:640px){ .grid{grid-template-columns:repeat(1,1fr);} }
+    label{display:block; font-size:12px; font-weight:bold; color:var(--muted); margin-bottom:4px;}
+    input[type=number], input[type=text]{
+      width:100%; padding:8px 10px; font-size:15px; border:1px solid var(--line);
+      border-radius:6px; background:#fff;
+    }
+    input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(31,111,235,.18);}
+    .actions{display:flex; gap:10px; align-items:center; margin-top:16px; flex-wrap:wrap;}
+    button{
+      font-size:15px; font-weight:bold; padding:9px 18px; border-radius:6px;
+      border:1px solid transparent; cursor:pointer;
+    }
+    button.primary{background:var(--accent); color:#fff;}
+    button.primary:disabled{background:#9bb7e6; cursor:not-allowed;}
+    button.ghost{background:#fff; color:var(--ink); border-color:var(--line);}
+    button:active{transform:translateY(1px);}
+    .status{font-size:13px; min-height:20px; flex:1; min-width:200px;}
+    .status.ok{color:var(--ok);} .status.err{color:var(--err);} .status.busy{color:var(--accent);}
+    .preview-wrap{margin-top:6px;}
+    .preview-wrap h2{font-size:14px; color:var(--muted); margin:0 0 8px;}
+    iframe#print-frame{
+      width:100%; height:1200px; border:1px solid var(--line); border-radius:8px;
+      background:#fff;
+    }
+    @media print{
+      .no-print{display:none !important;}
+      body{background:#fff; padding:0;}
+      iframe#print-frame{display:none;}
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <h1>Cash Voucher Batch Printer</h1>
+    <p class="sub">Static equivalent of <code>print-vouchers.py</code>. All vouchers are combined into a single multi-page document — one print command for the whole batch. Each page reproduces the <code>cash-voucher6.html</code> template exactly, with <code>$FY</code>/<code>$NUMERAL</code> substituted and <code>@page{margin:0.25in;size:A4}</code> applied (matching weasyprint's page geometry).</p>
+
+    <div class="panel">
+      <div class="grid">
+        <div>
+          <label for="start">Start voucher number</label>
+          <input id="start" type="number" min="0" value="1" />
+        </div>
+        <div>
+          <label for="end">End voucher number (inclusive)</label>
+          <input id="end" type="number" min="0" value="10" />
+        </div>
+        <div>
+          <label for="fy">Fiscal year</label>
+          <input id="fy" type="text" value="25" placeholder="e.g. 25" />
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="print-btn">Print vouchers</button>
+        <button class="ghost" id="preview-btn">Preview batch</button>
+        <span class="status" id="status"></span>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <h2>Preview (all vouchers, exactly as they will print — one page each)</h2>
+      <iframe id="print-frame" title="Voucher preview"></iframe>
+    </div>
+  </div>
+
+  <!--
+    The exact, unmodified cash-voucher6.html template lives below.
+    Only $FY and $NUMERAL are substituted at print time; @page{margin:0.25in;size:A4}
+    is applied as a separate stylesheet (matching weasyprint's stylesheets=[CSS(...)]
+    plus its default A4 page size), leaving the template's own <style> byte-for-byte
+    unchanged. Body padding (30px) is moved to each .voucher-page wrapper so every
+    page renders identically to the original single-voucher output.
+  -->
+  <script type="text/plain" id="voucher-template"><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Cash Voucher Form</title>
+  <style>
+    body{
+      font-family:Arial,sans-serif;
+      padding:30px;
+      line-height:1.4;
+      margin:0;
+      font-size:16px;            /* base / section size */
+    }
+
+    /* Header block with voucher title and date */
+    .voucher-header{
+      font-weight:bold;
+      font-size:20px;
+      margin-bottom:2px;
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+    .date-section{
+      white-space:nowrap;
+      font-weight:normal;        /* dates not bold */
+      font-size:16px;            /* now matches body/section size */
+    }
+    .date-line{
+      display:inline-block;
+      border-bottom:1px solid #000;
+      width:120px;
+      margin-left:12px;
+    }
+
+    /* Main bold line (top Amount only) */
+    .amount-line{
+      font-weight:bold;
+      margin:15px 0 10px 0;
+      font-size:18px;
+    }
+
+    /* Sub-amount lines (same as body text) */
+    .sub-amount-line{
+      font-weight:normal;
+      margin:15px 0 10px 0;
+      font-size:16px;
+    }
+
+    /* Generic section with underline space */
+    .section{margin-bottom:12px;}
+    .line{
+      border-bottom:1px solid #000;
+      height:50px;
+      margin-top:5px;
+    }
+
+    /* Currency grid */
+    .currency-row{
+      display:table;
+      width:100%;
+      margin-bottom:15px;
+      border-collapse:collapse;
+    }
+    .currency-box{
+      display:table-cell;
+      border:1px solid #000;
+      height:40px;
+      vertical-align:middle;
+      text-align:left;
+      padding-left:10px;
+      font-weight:bold;
+      font-size:16px;
+    }
+    .usd-box{width:35%;}
+    .mxn-box{width:45%;}
+    .er-box{width:20%;}
+    
+     /* Inline label-plus-line */
+    .inline-row{
+      display:flex;
+      align-items:flex-end;   /* anchor everything at the top */
+      gap:8px;
+      margin-bottom:12px;
+    }
+
+    /* Thin writing line */
+    .inline-row .line{
+      flex:1;
+      height:0;                /* no extra thickness—just a border */
+      border-bottom:1px solid #000;
+      margin-top:6px;          /* push it down a bit */
+    }
+    
+        /*  inside your existing <style>  */
+    .inline-row .project-line{
+      flex:0 0 260px;   /* <— change 160 to make the Project blank longer/shorter */
+    }
+
+
+      
+    
+  </style>
+</head>
+<body>
+
+  <!-- Voucher number + date -->
+  <div class="voucher-header">
+    <span>Voucher number:&nbsp;FY$FY-$NUMERAL</span>
+    <span class="date-section">Date of voucher:<span class="date-line"></span></span>
+  </div>
+
+  <!-- Amount -->
+  <div class="amount-line">Amount</div>
+
+  <!-- Currency row -->
+  <div class="currency-row">
+    <div class="currency-box usd-box">USD</div>
+    <div class="currency-box mxn-box">MXN</div>
+    <div class="currency-box er-box">ER</div>
+  </div>
+
+  <!-- Purpose -->
+  <div class="section">
+    Purpose of voucher:
+    <div class="line"></div>
+  </div>
+
+  <!-- Approver -->
+  <div class="section">
+    Approver name and signature:
+    <div class="line"></div>
+  </div>
+
+  <!-- Signee -->
+  <div class="section">
+    If cash signed out, signee name and signature:
+    <div class="line"></div>
+  </div>
+
+  <!-- Vendor acknowledgment -->
+  <div class="voucher-header">Vendor acknowledgement if no receipt given:</div>
+  <div class="section">
+    Vendor name and signature
+    <div class="line"></div>
+  </div>
+
+  <!-- Variance header + date -->
+  <div class="voucher-header">
+    <span>Variance</span>
+    <span class="date-section">Date of variance:<span class="date-line"></span></span>
+  </div>
+
+  <!-- Additional cash -->
+  <div class="sub-amount-line">Additional cash authorized:</div>
+  <div class="currency-row">
+    <div class="currency-box usd-box">USD</div>
+    <div class="currency-box mxn-box">MXN</div>
+    <div class="currency-box er-box">ER</div>
+  </div>
+
+  <!-- Returned cash -->
+  <div class="sub-amount-line">Cash returned:</div>
+  <div class="currency-row">
+    <div class="currency-box usd-box">USD</div>
+    <div class="currency-box mxn-box">MXN</div>
+    <div class="currency-box er-box">ER</div>
+  </div>
+
+<!-- Variance approval -->
+<div class="section">
+    Variance approver name and signature:
+    <div class="line"></div>
+  </div>
+
+<!-- Note lines -->
+<div class="inline-row">
+  Note&nbsp;1:
+  <div class="line"></div>
+</div>
+<div class="inline-row">
+  Note&nbsp;2:
+  <div class="line"></div>
+</div>
+<div class="inline-row">
+  Note&nbsp;3:
+  <div class="line"></div>
+</div>
+<div class="inline-row">
+  Note&nbsp;4:
+  <div class="line"></div>
+</div>
+<div class="inline-row">
+  Note&nbsp;5:
+  <div class="line"></div>
+</div>
+
+
+
+
+</body>
+</html>
+</script>
+
+  <script>
+  (function(){
+    "use strict";
+
+    var tplNode  = document.getElementById("voucher-template");
+    var iframe  = document.getElementById("print-frame");
+    var startEl = document.getElementById("start");
+    var endEl   = document.getElementById("end");
+    var fyEl    = document.getElementById("fy");
+    var btn     = document.getElementById("print-btn");
+    var prevBtn = document.getElementById("preview-btn");
+    var status  = document.getElementById("status");
+
+    function setStatus(msg, kind){
+      status.textContent = msg || "";
+      status.className = "status" + (kind ? " " + kind : "");
+    }
+
+    // Parse the template once: extract <head> and <body> inner content.
+    var rawTpl   = tplNode.textContent;
+    var headM    = rawTpl.match(/<head>([\s\S]*?)<\/head>/i);
+    var bodyM    = rawTpl.match(/<body>([\s\S]*?)<\/body>/i);
+    var headHTML = headM ? headM[1] : "";
+    var bodyHTML = bodyM ? bodyM[1] : "";
+
+    function readArgs(){
+      var start = parseInt(startEl.value, 10);
+      var end   = parseInt(endEl.value, 10);
+      var fy    = fyEl.value.trim();
+      if(isNaN(start)) start = 0;
+      if(isNaN(end))   end   = 0;
+      return { start:start, end:end, fy:fy };
+    }
+
+    // Build a single multi-page document containing every voucher.
+    //
+    // Fidelity to print-vouchers.py:
+    //  - The template's <head> (including its <style>) is reproduced verbatim.
+    //  - Only $FY and $NUMERAL are substituted in the body (global, matching
+    //    Python's str.replace which replaces all occurrences).
+    //  - @page{margin:0.25in;size:A4} is a SEPARATE stylesheet, mirroring
+    //    weasyprint's stylesheets=[CSS('@page{margin:0.25in}')] plus its
+    //    default A4 page size.  The template's own <style> is untouched.
+    //  - The original body{padding:30px} is overridden to 0 and replicated
+    //    as padding:30px on each .voucher-page wrapper, so every page renders
+    //    identically to the original single-voucher output.
+    //  - page-break-after:always forces exactly one voucher per printed page.
+    function buildBatch(start, end, fy){
+      var pages = [];
+      for(var n = start; n <= end; n++){
+        var numeral = String(n).padStart(4, "0");
+        var content = bodyHTML
+          .replace(/\$FY/g, fy)
+          .replace(/\$NUMERAL/g, numeral);
+        pages.push('<div class="voucher-page">' + content + '</div>');
+      }
+
+      return "<!DOCTYPE html>\n<html lang=\"en\">\n<head>"
+        + headHTML
+        + "\n<style>@page{margin:0.25in;size:A4;}</style>"
+        + "\n<style>"
+        + "body{padding:0;margin:0;}"
+        + ".voucher-page{padding:30px;page-break-after:always;break-after:page;}"
+        + ".voucher-page:last-child{page-break-after:auto;break-after:auto;}"
+        + "</style>"
+        + "\n</head>\n<body>\n"
+        + pages.join("\n")
+        + "\n</body>\n</html>";
+    }
+
+    // Write an HTML document string into the iframe; resolve on load.
+    function loadIframe(html){
+      return new Promise(function(resolve, reject){
+        var w = iframe.contentWindow;
+        var settled = false;
+        var to = setTimeout(function(){
+          if(!settled){ settled = true; resolve(); }
+        }, 8000);
+        iframe.onload = function(){
+          if(settled) return; settled = true; clearTimeout(to); resolve();
+        };
+        try {
+          var doc = w.document;
+          doc.open();
+          doc.write(html);
+          doc.close();
+        } catch(e){
+          if(!settled){ settled = true; clearTimeout(to); reject(e); }
+        }
+      });
+    }
+
+    // Print the iframe's document once (single print dialog for all pages).
+    // Resolves when the print dialog is closed (afterprint), with a safety
+    // timeout so the UI never deadlocks.
+    function printIframe(){
+      return new Promise(function(resolve){
+        var w = iframe.contentWindow;
+        var done = false;
+        var finish = function(){
+          if(done) return; done = true;
+          try { w.removeEventListener("afterprint", finish); } catch(e){}
+          clearTimeout(fallback);
+          resolve();
+        };
+        var fallback = setTimeout(finish, 300000); // 5 min safety net
+        try {
+          w.addEventListener("afterprint", finish);
+          w.focus();
+          w.print();
+        } catch(e){
+          finish();
+        }
+      });
+    }
+
+    async function printAll(){
+      var a = readArgs();
+      if(a.start > a.end){
+        setStatus("Error: Start must be <= End.", "err");
+        return;
+      }
+      if(!a.fy){
+        setStatus("Error: Fiscal year is required.", "err");
+        return;
+      }
+      btn.disabled = true; prevBtn.disabled = true;
+      try {
+        var total = a.end - a.start + 1;
+        setStatus("Building " + total + "-page document (vouchers " + a.start + "–" + a.end + ", FY " + a.fy + ")…", "busy");
+        var doc = buildBatch(a.start, a.end, a.fy);
+        await loadIframe(doc);
+        setStatus("Sending " + total + "-page document to printer (one print command)…", "busy");
+        await printIframe();
+        setStatus("Done — " + total + " vouchers printed as a single " + total + "-page document.", "ok");
+      } catch(e){
+        setStatus("Error: " + (e && e.message ? e.message : e), "err");
+      } finally {
+        btn.disabled = false; prevBtn.disabled = false;
+      }
+    }
+
+    async function previewBatch(){
+      var a = readArgs();
+      if(a.start > a.end){ setStatus("Error: Start must be <= End.", "err"); return; }
+      if(!a.fy){ setStatus("Error: Fiscal year is required.", "err"); return; }
+      var total = a.end - a.start + 1;
+      setStatus("Previewing " + total + " vouchers…", "busy");
+      await loadIframe(buildBatch(a.start, a.end, a.fy));
+      setStatus("Previewing " + total + " vouchers (FY " + a.fy + ").", "ok");
+    }
+
+    btn.addEventListener("click", printAll);
+    prevBtn.addEventListener("click", previewBatch);
+
+    // Live preview as the user types (debounced).
+    var t;
+    function schedulePreview(){
+      clearTimeout(t);
+      t = setTimeout(previewBatch, 400);
+    }
+    [startEl, endEl, fyEl].forEach(function(el){
+      el.addEventListener("input", schedulePreview);
+    });
+
+    // Initial preview.
+    previewBatch();
+  })();
+  </script>
+</body>
+</html>
