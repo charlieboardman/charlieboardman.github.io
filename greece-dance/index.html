@@ -3,13 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#152525" />
+    <meta name="theme-color" content="#0D5EAF" />
     <meta name="description" content="An exploratory atlas of village dance traditions across Greece and Asia Minor." />
-    <title>Dance Atlas — A living dance atlas</title>
+    <title>Title here</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Gloock&display=swap" rel="stylesheet" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23172725'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='24' fill='%23f3efe7'%3EDA%3C/text%3E%3C/svg%3E" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -17,14 +16,10 @@
     <a class="skip-link" href="#archive-panel">Skip to archive</a>
     <div class="app-shell">
       <header class="site-header">
-        <a class="brand" href="#" aria-label="Dance Atlas home">
-          <span class="brand-mark" aria-hidden="true">DA</span>
-          <span class="brand-name">Dance Atlas</span>
-        </a>
-        <p class="tagline">A living atlas of dance, place &amp; memory</p>
-        <button class="about-button" id="about-button" type="button" aria-expanded="false" aria-controls="about-drawer">
-          <span>About the archive</span><span aria-hidden="true">↗</span>
-        </button>
+        <div class="brand">
+          <span class="brand-mark">logo here</span>
+          <span class="brand-name">Title here</span>
+        </div>
       </header>
 
       <main class="atlas">
@@ -53,7 +48,7 @@
         <aside class="archive-panel" id="archive-panel" aria-label="Village archive">
           <div class="panel-header">
             <div>
-              <h2 id="panel-title">All villages</h2>
+              <h2 id="panel-title" hidden></h2>
             </div>
             <button class="panel-close" id="panel-close" type="button" aria-label="Close archive">×</button>
           </div>
@@ -73,15 +68,6 @@
         </aside>
       </main>
     </div>
-
-    <div class="about-drawer" id="about-drawer" aria-hidden="true">
-      <button class="about-close" id="about-close" aria-label="Close about panel">×</button>
-      <p class="eyebrow">About this project</p>
-      <h2>A map shaped by the people who remember.</h2>
-      <p>This first-draft archive is a framework for gathering village histories, dance names and community knowledge across Greece and Asia Minor.</p>
-      <p class="fine-print">Archive records are maintained in the project’s atlas.xlsx workbook.</p>
-    </div>
-    <div class="drawer-scrim" id="drawer-scrim"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="vendor/xlsx.full.min.js"></script>

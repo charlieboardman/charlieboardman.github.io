@@ -14,7 +14,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     regions = parseAtlasWorkbook(workbook, window.XLSX).regions;
   } catch (error) {
     contentError = error;
-    console.error("Dance Atlas content error:", error);
+    console.error("Atlas content error:", error);
   }
 
   const markdownRenderer = window.marked?.Renderer ? new window.marked.Renderer() : null;
@@ -61,10 +61,6 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     archive: document.querySelector("#archive-panel"),
     mobileArchive: document.querySelector("#mobile-archive-button"),
     panelClose: document.querySelector("#panel-close"),
-    aboutButton: document.querySelector("#about-button"),
-    aboutDrawer: document.querySelector("#about-drawer"),
-    aboutClose: document.querySelector("#about-close"),
-    scrim: document.querySelector("#drawer-scrim"),
     languageOptions: document.querySelector("#language-options")
   };
 
@@ -96,7 +92,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     maxZoom: 11,
     noWrap: true,
     bounds: [[mapDataBounds.south, mapDataBounds.west], [mapDataBounds.north, mapDataBounds.east]],
-    attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Place labels Dance Atlas workbook'
+    attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Place labels atlas.xlsx'
   }).addTo(map);
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
@@ -341,7 +337,6 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     activeRegion = id;
     activeVillage = null;
     if (id) expandedRegions.add(id);
-    els.panelTitle.textContent = id ? regions.find((region) => region.id === id).name : "All villages";
     els.regionList.querySelectorAll(".region-chip").forEach((chip) => chip.classList.toggle("is-active", (chip.dataset.region === "all" ? null : chip.dataset.region) === id));
     previewRegion(id);
     showList();
@@ -397,25 +392,19 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     els.villageDetail.hidden = true;
     els.villageList.hidden = false;
     els.archive.classList.remove("is-detail");
-    els.panelTitle.hidden = false;
-    els.panelTitle.textContent = activeRegion ? regions.find((region) => region.id === activeRegion).name : "All villages";
+    const panelTitle = activeRegion ? regions.find((region) => region.id === activeRegion).name : "";
+    els.panelTitle.textContent = panelTitle;
+    els.panelTitle.hidden = !panelTitle;
+    els.archive.classList.toggle("has-panel-title", Boolean(panelTitle));
     renderVillages(els.search.value);
-  }
-
-  function setAbout(open) {
-    els.aboutDrawer.classList.toggle("is-open", open);
-    els.scrim.classList.toggle("is-open", open);
-    els.aboutDrawer.setAttribute("aria-hidden", String(!open));
-    els.aboutButton.setAttribute("aria-expanded", String(open));
   }
 
   els.search.addEventListener("input", showList);
   els.mobileArchive.addEventListener("click", () => els.archive.classList.add("is-open"));
   els.panelClose.addEventListener("click", () => els.archive.classList.remove("is-open"));
-  els.aboutButton.addEventListener("click", () => setAbout(true));
-  els.aboutClose.addEventListener("click", () => setAbout(false));
-  els.scrim.addEventListener("click", () => setAbout(false));
-  document.addEventListener("keydown", (event) => { if (event.key === "Escape") { setAbout(false); els.archive.classList.remove("is-open"); } });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") els.archive.classList.remove("is-open");
+  });
 
   if (contentError) showContentError(contentError);
   else {
