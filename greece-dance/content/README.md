@@ -1,95 +1,84 @@
-# Content guide
+# Editing `atlas.md`
 
-This directory controls the interactive **overlay layer**: colored dots, tooltips,
-the expandable region tree and village text. It does not control place names baked
-into the map. Those are maintained separately in `map-layer/places.csv`.
+[`atlas.md`](atlas.md) is the complete, canonical archive. The page fetches it and
+builds the map markers and archive tree in your browser every time the page loads.
+Save or commit an edit, reload the site, and the edit appears—there is no build step
+and no generated index to keep in sync.
 
-## Folder structure
+The file controls the interactive **overlay layer**. It does not control names baked
+into the raster map; those live separately in `map-layer/places.csv`.
 
-The folder structure is the archive structure. Region, subregion and village names
-are generated from their directory names, with hyphens converted to spaces and each
-word capitalized.
+## The shape of the file
 
-```text
-content/regions/
-  aegean/
-    region.json
-    chios/
-      pyrgi/
-        info.md
-        coordinates.json
+The heading level is the hierarchy. The word after the heading markers removes any
+ambiguity:
+
+```markdown
+atlas-version: 1
+
+# Region: Macedonia
+color: #e5a83f
+bounds: 39.8, 20.8, 41.4, 24.8
+
+## Village: Thessaloniki
+coordinates: 40.6401, 22.9444
+
+This village belongs directly to Macedonia.
+
+## Subregion: Pella
+
+### Village: Aridaia
+coordinates: 40.973, 22.057
+
+This village belongs to Pella, inside Macedonia.
 ```
 
-That example renders as **Aegean → Chios → Pyrgi**. Villages that do not belong to
-a subregion can instead live directly inside their region:
+- `# Region:` starts a region.
+- `## Village:` adds a village directly to the current region.
+- `## Subregion:` starts a subregion.
+- `### Village:` adds a village to the current subregion.
+- `####`, `#####` and `######` are available as ordinary headings inside village
+  text. Levels 1–3 are reserved for the archive structure.
 
-```text
-content/regions/
-  aegean/
-    region.json
-    pyrgi/
-      info.md
-      coordinates.json
-```
-
-That example renders as **Aegean → Pyrgi**. A region may contain direct villages,
-subregions or both. Use lowercase directory names and hyphens between words, such
-as `western-macedonia` or `nea-vyssa`. Unicode directory names are supported when
-spelling matters; `çeşme` renders as **Çeşme**.
+Indentation and extra spaces do not matter on headings or setting lines. Both `:`
+and `=` work for settings, though the examples use `:` consistently.
 
 ## Region settings
 
-Each region has one `region.json`. The region name comes from the directory, so this
-file contains only its tray color and the map bounds used when focusing that region:
+Put these two lines directly below every region heading:
 
-```json
-{
-  "color": "#3f77a6",
-  "bounds": {
-    "south": 35.0,
-    "west": 23.4,
-    "north": 40.5,
-    "east": 29.0
-  }
-}
+```markdown
+color: #3f77a6
+bounds: 35.0, 23.4, 40.5, 29.0
 ```
 
-Subregions need no configuration file. A directory directly inside a region is
-recognized as a village when it contains both village source files; otherwise it
-is treated as a subregion.
+`color` is a six-digit hex color. `bounds` is four comma-separated numbers in this
+order: **south, west, north, east**. The bounds determine the map view when someone
+selects the region.
 
 ## Village content
 
-Each village is a directory inside a region or subregion and contains exactly two
-source files:
+The first meaningful line below every village heading is its coordinates:
 
-- `info.md` contains the text rendered beneath the village name. Standard Markdown
-  formatting such as paragraphs, headings, emphasis, lists and links is supported.
-  Images and raw HTML are kept as text so village cards remain text-only.
-- `coordinates.json` positions the colored dot using separately labeled north and
-  east values:
-
-```json
-{
-  "north": 38.227,
-  "east": 25.994
-}
+```markdown
+coordinates: 38.227, 25.994
 ```
 
-The village name and internal ID come from its directory path. There are no name,
-ID, summary, notes, dance, location or review fields to maintain. Search checks the
-village, optional subregion and region names plus the contents of `info.md`, so
-dance names written in the Markdown remain searchable.
+The order is **north, east** (latitude, longitude). Everything after that, until the
+next structural heading, is the village's Markdown. Paragraphs, emphasis, lists,
+links, blockquotes, code and level 4–6 headings are supported. Images and raw HTML
+are displayed as text so archive entries remain text-only.
 
-## Rebuild
+Search checks the region, optional subregion, village name and all village Markdown.
+Names are written exactly once—in their headings—and stable internal IDs are derived
+from the hierarchy, such as `macedonia/pella/aridaia`.
 
-After changing the directory structure, `info.md`, `coordinates.json` or
-`region.json`, regenerate the browser-ready catalog:
+## Errors are meant to be fixable
 
-```bash
-npm run build
-```
+If the file is malformed, the archive panel shows the exact line number, the source
+line and a plain-language explanation. For example, it catches missing settings,
+invalid coordinates, duplicate names, an unsupported heading level and a village at
+the wrong depth. Fix the named line and reload; no command is required.
 
-The generated `content/catalog.generated.js` file is committed to the repository.
-Adding or moving a village here does not add, remove or reposition its baked map
-label; edit `map-layer/places.csv` separately when that label needs to change.
+Keep `atlas-version: 1` as the first non-empty line. It gives future versions of the
+reader a safe way to recognize this format instead of guessing.

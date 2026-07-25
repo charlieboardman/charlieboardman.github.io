@@ -1,9 +1,35 @@
-(() => {
-  const data = window.DANCE_ATLAS_DATA || { regions: [] };
-  const regions = data.regions;
+import { AtlasParseError, parseAtlas } from "./atlas-parser.js";
+
+(async () => {
+  let regions = [];
+  let contentError = null;
+  try {
+    if (!window.marked?.parse) throw new Error("The bundled Markdown reader could not be loaded.");
+    const atlasUrl = new URL("./content/atlas.md", import.meta.url);
+    atlasUrl.searchParams.set("loaded", Date.now().toString());
+    const response = await fetch(atlasUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Could not load content/atlas.md (HTTP ${response.status}).`);
+    regions = parseAtlas(await response.text()).regions;
+  } catch (error) {
+    contentError = error;
+    console.error("Dance Atlas content error:", error);
+  }
+
+  const markdownRenderer = window.marked?.Renderer ? new window.marked.Renderer() : null;
+  if (markdownRenderer) {
+    markdownRenderer.html = ({ text }) => escapeHtml(text);
+    markdownRenderer.image = ({ text }) => escapeHtml(text);
+  }
+
+  const renderMarkdown = (source) => window.marked.parse(source, {
+    async: false,
+    renderer: markdownRenderer
+  });
+
   const villages = regions.flatMap((region) => [
     ...(region.villages || []).map((village) => ({
       ...village,
+      infoHtml: renderMarkdown(village.info),
       regionId: region.id,
       regionName: region.name,
       regionColor: region.color,
@@ -13,6 +39,7 @@
     ...(region.subregions || []).flatMap((subregion) =>
       (subregion.villages || []).map((village) => ({
         ...village,
+        infoHtml: renderMarkdown(village.info),
         regionId: region.id,
         regionName: region.name,
         regionColor: region.color,
@@ -165,6 +192,27 @@
       button.addEventListener("mouseleave", () => previewRegion(activeRegion));
       button.addEventListener("click", () => selectRegion(id, true));
     });
+  }
+
+  function showContentError(error) {
+    const isAtlasError = error instanceof AtlasParseError;
+    const lineLabel = isAtlasError ? `Line ${error.line}: ` : "";
+    const sourceLine = isAtlasError && error.sourceLine
+      ? `<pre><code>${escapeHtml(error.sourceLine)}</code></pre>`
+      : "";
+    els.panelTitle.textContent = "Atlas content error";
+    els.search.disabled = true;
+    els.regionList.innerHTML = "";
+    els.villageList.innerHTML = `
+      <section class="content-error" role="alert">
+        <p class="content-error-label">Could not read content/atlas.md</p>
+        <p><strong>${escapeHtml(lineLabel)}</strong>${escapeHtml(error.message || String(error))}</p>
+        ${sourceLine}
+        <p>Fix that line and reload this page. No build is required.</p>
+      </section>
+    `;
+    document.querySelector("#mobile-count").textContent = "!";
+    els.archive.classList.add("is-open");
   }
 
   function renderVillages(query = "") {
@@ -359,7 +407,10 @@
   els.scrim.addEventListener("click", () => setAbout(false));
   document.addEventListener("keydown", (event) => { if (event.key === "Escape") { setAbout(false); els.archive.classList.remove("is-open"); } });
 
-  renderRegions();
-  renderVillages();
+  if (contentError) showContentError(contentError);
+  else {
+    renderRegions();
+    renderVillages();
+  }
   window.addEventListener("load", () => map.invalidateSize());
 })();

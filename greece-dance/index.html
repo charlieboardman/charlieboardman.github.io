@@ -65,7 +65,9 @@
           </div>
 
           <div class="panel-scroll">
-            <div id="village-list" class="archive-tree"></div>
+            <div id="village-list" class="archive-tree" aria-live="polite">
+              <p class="loading-state">Reading content/atlas.md…</p>
+            </div>
             <article id="village-detail" class="village-detail" hidden></article>
           </div>
         </aside>
@@ -82,7 +84,7 @@
     <div class="drawer-scrim" id="drawer-scrim"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="content/catalog.generated.js"></script>
-    <script src="app.js"></script>
+    <script src="vendor/marked.umd.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>
