@@ -8,7 +8,7 @@
   --greek-blue: #0d5eaf;
   --line: rgba(23, 39, 37, 0.17);
   --panel-width: 410px;
-  --header-height: 78px;
+  --header-height: 58px;
 }
 
 * { box-sizing: border-box; }
@@ -141,7 +141,7 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 }
 
 @media (max-width: 720px) {
-  :root { --header-height: 66px; }
+  :root { --header-height: 56px; }
   .site-header { padding: 0 17px; }
   .brand-mark { min-width: 52px; height: 28px; }
   .brand-name { font-size: 22px; }
