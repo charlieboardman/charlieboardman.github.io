@@ -13,6 +13,7 @@
     "en",
     "el"
   ],
-  "placeSource": "map-layer/places.csv",
-  "placeCount": 11
+  "placeSource": "content/atlas.xlsx",
+  "placeCount": 42,
+  "dancePlaceCount": 42
 }

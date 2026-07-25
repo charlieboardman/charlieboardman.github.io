@@ -1,15 +1,17 @@
-import { AtlasParseError, parseAtlas } from "./atlas-parser.js";
+import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
 
 (async () => {
   let regions = [];
   let contentError = null;
   try {
+    if (!window.XLSX?.read) throw new Error("The bundled spreadsheet reader could not be loaded.");
     if (!window.marked?.parse) throw new Error("The bundled Markdown reader could not be loaded.");
-    const atlasUrl = new URL("./content/atlas.md", import.meta.url);
+    const atlasUrl = new URL("./content/atlas.xlsx", import.meta.url);
     atlasUrl.searchParams.set("loaded", Date.now().toString());
     const response = await fetch(atlasUrl, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Could not load content/atlas.md (HTTP ${response.status}).`);
-    regions = parseAtlas(await response.text()).regions;
+    if (!response.ok) throw new Error(`Could not load content/atlas.xlsx (HTTP ${response.status}).`);
+    const workbook = window.XLSX.read(await response.arrayBuffer(), { type: "array" });
+    regions = parseAtlasWorkbook(workbook, window.XLSX).regions;
   } catch (error) {
     contentError = error;
     console.error("Dance Atlas content error:", error);
@@ -94,7 +96,7 @@ import { AtlasParseError, parseAtlas } from "./atlas-parser.js";
     maxZoom: 11,
     noWrap: true,
     bounds: [[mapDataBounds.south, mapDataBounds.west], [mapDataBounds.north, mapDataBounds.east]],
-    attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Place labels Dance Atlas archive'
+    attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Place labels Dance Atlas workbook'
   }).addTo(map);
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
@@ -207,20 +209,16 @@ import { AtlasParseError, parseAtlas } from "./atlas-parser.js";
   }
 
   function showContentError(error) {
-    const isAtlasError = error instanceof AtlasParseError;
-    const lineLabel = isAtlasError ? `Line ${error.line}: ` : "";
-    const sourceLine = isAtlasError && error.sourceLine
-      ? `<pre><code>${escapeHtml(error.sourceLine)}</code></pre>`
-      : "";
+    const isAtlasError = error instanceof AtlasWorkbookError;
+    const location = isAtlasError && error.location ? `${error.location}: ` : "";
     els.panelTitle.textContent = "Atlas content error";
     els.search.disabled = true;
     els.regionList.innerHTML = "";
     els.villageList.innerHTML = `
       <section class="content-error" role="alert">
-        <p class="content-error-label">Could not read content/atlas.md</p>
-        <p><strong>${escapeHtml(lineLabel)}</strong>${escapeHtml(error.message || String(error))}</p>
-        ${sourceLine}
-        <p>Fix that line and reload this page. No build is required.</p>
+        <p class="content-error-label">Could not read content/atlas.xlsx</p>
+        <p><strong>${escapeHtml(location)}</strong>${escapeHtml(error.message || String(error))}</p>
+        <p>Fix that cell and reload this page. No build is required.</p>
       </section>
     `;
     document.querySelector("#mobile-count").textContent = "!";
