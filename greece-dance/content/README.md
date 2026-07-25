@@ -28,12 +28,16 @@ Do not rename or remove the columns:
 | `region` | A region ID from the `Regions` sheet. Required when `has_dance` is `TRUE`. |
 | `subregion` | Optional display name. Leave blank for a village directly inside its region. |
 | `info` | Optional Markdown about the village and its dances. Multi-line cell text is fine. |
-| `kind` | Optional `city`, `town`, or `village`; defaults to `village`. |
-| `min_zoom` | Optional whole number from 5 through 9; defaults to 8. |
-| `priority` | Optional number controlling which labels win when they overlap; larger wins. |
+| `kind` | Reserved classification such as `city`, `town`, or `village`; the current renderer gives every place the same visual style. |
+| `min_zoom` | Reserved whole number from 5 through 9; the current renderer shows every place at every zoom. |
+| `priority` | Optional number controlling paint order when labels overlap; larger numbers are painted on top. |
 
 Every `Places` row requires an ID, coordinates, at least one name, and an explicit
 `has_dance` value. `TRUE`, `FALSE`, `yes`, `no`, `1`, and `0` are accepted.
+
+Every place label is baked into every native zoom level. Labels may overlap at
+lower zooms, then separate naturally as the geographic spacing grows while
+zooming in.
 
 The hierarchy is straightforward:
 

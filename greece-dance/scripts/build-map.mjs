@@ -36,7 +36,7 @@ for (const zoom of zooms) {
 
   for (const language of languages) {
     const labelLayer = buildLabelsSvg(language, zoom, range, width, height);
-    if (zoom === maxNativeZoom && labelLayer.placeCount !== places.length) {
+    if (labelLayer.placeCount !== places.length) {
       throw new Error(
         `${language} z${zoom} rendered ${labelLayer.placeCount} of ${places.length} workbook place labels.`
       );
@@ -188,19 +188,13 @@ function buildLabelsSvg(language, zoom, range, width, height) {
   }
 
   places
-    .filter((place) => isPlaceVisible(place, zoom))
     .map((place) => ({ ...place, label: placeName(place, language) }))
     .filter((place) => place.label)
-    .sort((a, b) => b.priority - a.priority)
+    .sort((a, b) => a.priority - b.priority)
     .forEach((place) => {
       const [x, y] = project(place.lon, place.lat, zoom, range);
       if (!inside(x, y, width, height)) return;
       const fontSize = 8;
-      const rect = labelRect(x, y, place.label, fontSize, 0.57, 7);
-      // Keep lower zooms readable, but guarantee that every workbook place is
-      // present at maximum native zoom even when neighboring labels overlap.
-      if (zoom < maxNativeZoom && collides(rect, occupied)) return;
-      occupied.push(rect);
       const fill = "#75847f";
       output.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1" fill="${fill}"/>`);
       output.push(`<text x="${x.toFixed(1)}" y="${(y + fontSize + 4).toFixed(1)}" text-anchor="middle" fill="${fill}" stroke="#edf2ec" stroke-width="2.4" paint-order="stroke" stroke-linejoin="round" font-family="DejaVu Sans, sans-serif" font-size="${fontSize}" font-weight="500">${escapeXml(place.label)}</text>`);
@@ -208,10 +202,6 @@ function buildLabelsSvg(language, zoom, range, width, height) {
     });
 
   return { svg: `<g>${output.join("")}</g>`, placeCount };
-}
-
-function isPlaceVisible(place, zoom) {
-  return zoom >= place.minZoom;
 }
 
 function placeName(place, language) {
