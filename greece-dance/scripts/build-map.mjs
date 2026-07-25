@@ -194,7 +194,7 @@ function buildLabelsSvg(language, zoom, range, width, height) {
     .forEach((place) => {
       const [x, y] = project(place.lon, place.lat, zoom, range);
       if (!inside(x, y, width, height)) return;
-      const fontSize = 8;
+      const fontSize = 12;
       const fill = "#75847f";
       output.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1" fill="${fill}"/>`);
       output.push(`<text x="${x.toFixed(1)}" y="${(y + fontSize + 4).toFixed(1)}" text-anchor="middle" fill="${fill}" stroke="#edf2ec" stroke-width="2.4" paint-order="stroke" stroke-linejoin="round" font-family="DejaVu Sans, sans-serif" font-size="${fontSize}" font-weight="500">${escapeXml(place.label)}</text>`);
