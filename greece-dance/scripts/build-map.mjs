@@ -12,6 +12,7 @@ const tilePixelRatio = 2;
 const outputTileSize = tileSize * tilePixelRatio;
 const bounds = { south: 34, west: 18, north: 43.5, east: 34.5 };
 const zooms = [5, 6, 7, 8, 9];
+const maxNativeZoom = Math.max(...zooms);
 const languages = ["en", "el"];
 
 const [countries, admin1, lakes, places] = await Promise.all([
@@ -34,13 +35,18 @@ for (const zoom of zooms) {
   const base = buildGeometrySvg(zoom, range);
 
   for (const language of languages) {
-    const labels = buildLabelsSvg(language, zoom, range, width, height);
+    const labelLayer = buildLabelsSvg(language, zoom, range, width, height);
+    if (zoom === maxNativeZoom && labelLayer.placeCount !== places.length) {
+      throw new Error(
+        `${language} z${zoom} rendered ${labelLayer.placeCount} of ${places.length} workbook place labels.`
+      );
+    }
     const renderWidth = width * tilePixelRatio;
     const renderHeight = height * tilePixelRatio;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${renderWidth}" height="${renderHeight}" viewBox="0 0 ${width} ${height}">
       <rect width="100%" height="100%" fill="#cfd9d5"/>
       ${base}
-      ${labels}
+      ${labelLayer.svg}
     </svg>`;
 
     const { data, info } = await sharp(Buffer.from(svg), { limitInputPixels: false })
@@ -65,14 +71,17 @@ for (const zoom of zooms) {
           .toFile(path.join(tileDir, `${y}.webp`));
       }
     }
-    console.log(`Rendered ${language} tiles at z${zoom} (${range.maxX - range.minX + 1}×${range.maxY - range.minY + 1}).`);
+    console.log(
+      `Rendered ${language} tiles at z${zoom} (${range.maxX - range.minX + 1}×${range.maxY - range.minY + 1}; `
+      + `${labelLayer.placeCount}/${places.length} place labels).`
+    );
   }
 }
 
 await writeFile(path.join(outputRoot, "metadata.json"), `${JSON.stringify({
   bounds,
   minZoom: 5,
-  maxNativeZoom: 9,
+  maxNativeZoom,
   tileSize,
   tilePixelRatio,
   languages,
@@ -156,6 +165,7 @@ function geometryPath(geometry, zoom, range, closeRings) {
 function buildLabelsSvg(language, zoom, range, width, height) {
   const occupied = [];
   const output = [];
+  let placeCount = 0;
 
   if (zoom <= 7) {
     relevantCountries
@@ -188,15 +198,18 @@ function buildLabelsSvg(language, zoom, range, width, height) {
       const kind = place.kind;
       const fontSize = kind === "city" ? (zoom <= 6 ? 9.5 : 9) : kind === "town" ? 8.2 : 7.4;
       const rect = labelRect(x, y, place.label, fontSize, 0.57, 5);
-      if (collides(rect, occupied)) return;
+      // Keep lower zooms readable, but guarantee that every workbook place is
+      // present at maximum native zoom even when neighboring labels overlap.
+      if (zoom < maxNativeZoom && collides(rect, occupied)) return;
       occupied.push(rect);
       const fill = kind === "city" ? "#687873" : kind === "town" ? "#75847f" : "#82908b";
       const weight = kind === "city" ? 600 : 500;
       output.push(`<circle cx="${x.toFixed(1)}" cy="${(y - 2).toFixed(1)}" r="${kind === "city" ? 1.5 : 1}" fill="${fill}"/>`);
       output.push(`<text x="${x.toFixed(1)}" y="${(y + fontSize + 2).toFixed(1)}" text-anchor="middle" fill="${fill}" stroke="#edf2ec" stroke-width="2.4" paint-order="stroke" stroke-linejoin="round" font-family="DejaVu Sans, sans-serif" font-size="${fontSize}" font-weight="${weight}">${escapeXml(place.label)}</text>`);
+      placeCount += 1;
     });
 
-  return `<g>${output.join("")}</g>`;
+  return { svg: `<g>${output.join("")}</g>`, placeCount };
 }
 
 function isPlaceVisible(place, zoom) {
