@@ -160,6 +160,18 @@ import { AtlasParseError, parseAtlas } from "./atlas-parser.js";
   });
   setMapLanguage(mapLanguage);
 
+  els.regionList.addEventListener("wheel", (event) => {
+    if (els.regionList.scrollWidth <= els.regionList.clientWidth) return;
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (!delta) return;
+    const atStart = els.regionList.scrollLeft <= 0;
+    const atEnd = els.regionList.scrollLeft + els.regionList.clientWidth >= els.regionList.scrollWidth - 1;
+    if ((delta < 0 && atStart) || (delta > 0 && atEnd)) return;
+    event.preventDefault();
+    const unit = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? els.regionList.clientWidth : 1;
+    els.regionList.scrollLeft += delta * unit;
+  }, { passive: false });
+
   const markerById = new Map();
   const expandedRegions = new Set();
   const expandedSubregions = new Set();
