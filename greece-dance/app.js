@@ -69,11 +69,14 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   const mapDataBounds = { south: 34, west: 18, north: 43.5, east: 34.5 };
   const minNativeZoom = 5;
   const maxNativeZoom = 9;
+  const maxMapZoom = 11;
+  const minimumMarkerDiameter = 9;
+  const maximumMarkerDiameter = 18;
   const map = L.map("map", {
     center: [39.25, 26.1],
     zoom: 6,
     minZoom: minNativeZoom,
-    maxZoom: 11,
+    maxZoom: maxMapZoom,
     maxBoundsViscosity: 1,
     zoomControl: false,
     attributionControl: true
@@ -89,7 +92,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   const basemap = L.tileLayer(`assets/map/${mapLanguage}/{z}/{x}/{y}.webp`, {
     minNativeZoom,
     maxNativeZoom,
-    maxZoom: 11,
+    maxZoom: maxMapZoom,
     noWrap: true,
     bounds: [[mapDataBounds.south, mapDataBounds.west], [mapDataBounds.north, mapDataBounds.east]],
     attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Place labels atlas.xlsx'
@@ -176,20 +179,37 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   let activeRegion = null;
   let activeVillage = null;
 
+  function markerDiameterAtZoom(zoom) {
+    const progress = Math.max(0, Math.min(1, (zoom - minNativeZoom) / (maxMapZoom - minNativeZoom)));
+    return minimumMarkerDiameter + (maximumMarkerDiameter - minimumMarkerDiameter) * progress;
+  }
+
+  function updateMarkerScale() {
+    const diameter = markerDiameterAtZoom(map.getZoom());
+    const scale = diameter / maximumMarkerDiameter;
+    markerById.forEach((marker) => {
+      marker.getElement()?.querySelector(".village-marker-scale")?.style.setProperty("--marker-scale", scale.toFixed(4));
+      marker.getTooltip().options.offset = L.point(0, -diameter / 2);
+    });
+  }
+
+  const initialMarkerDiameter = markerDiameterAtZoom(map.getZoom());
+  const initialMarkerScale = initialMarkerDiameter / maximumMarkerDiameter;
   villages.forEach((village) => {
     const icon = L.divIcon({
       className: "village-icon",
-      html: `<div class="village-marker" data-village="${escapeAttribute(village.id)}" style="--marker-color:${escapeAttribute(village.regionColor)}"></div>`,
-      iconSize: [9, 9],
-      iconAnchor: [4.5, 4.5]
+      html: `<div class="village-marker-scale" style="--marker-scale:${initialMarkerScale.toFixed(4)}"><div class="village-marker" data-village="${escapeAttribute(village.id)}" style="--marker-color:${escapeAttribute(village.regionColor)}"></div></div>`,
+      iconSize: [maximumMarkerDiameter, maximumMarkerDiameter],
+      iconAnchor: [maximumMarkerDiameter / 2, maximumMarkerDiameter / 2]
     });
     const marker = L.marker(village.coordinates, { icon, title: village.name, keyboard: true }).addTo(map);
-    marker.bindTooltip(village.name, { className: "village-tooltip", direction: "top", offset: [0, -4] });
+    marker.bindTooltip(village.name, { className: "village-tooltip", direction: "top", offset: [0, -initialMarkerDiameter / 2] });
     marker.on("click", () => selectVillage(village.id, true));
     marker.on("mouseover", () => setMarkerState(village.id, true));
     marker.on("mouseout", () => setMarkerState(village.id, activeVillage === village.id));
     markerById.set(village.id, marker);
   });
+  map.on("zoomend", updateMarkerScale);
 
   function renderRegions() {
     els.regionList.innerHTML = `
