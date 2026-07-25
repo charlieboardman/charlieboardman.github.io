@@ -184,11 +184,11 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     const icon = L.divIcon({
       className: "village-icon",
       html: `<div class="village-marker" data-village="${escapeAttribute(village.id)}" style="--marker-color:${escapeAttribute(village.regionColor)}"></div>`,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
+      iconSize: [13.5, 13.5],
+      iconAnchor: [6.75, 6.75]
     });
     const marker = L.marker(village.coordinates, { icon, title: village.name, keyboard: true }).addTo(map);
-    marker.bindTooltip(village.name, { className: "village-tooltip", direction: "top", offset: [0, -8] });
+    marker.bindTooltip(village.name, { className: "village-tooltip", direction: "top", offset: [0, -6] });
     marker.on("click", () => selectVillage(village.id, true));
     marker.on("mouseover", () => setMarkerState(village.id, true));
     marker.on("mouseout", () => setMarkerState(village.id, activeVillage === village.id));

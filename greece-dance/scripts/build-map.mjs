@@ -197,15 +197,15 @@ function buildLabelsSvg(language, zoom, range, width, height) {
       if (!inside(x, y, width, height)) return;
       const kind = place.kind;
       const fontSize = kind === "city" ? (zoom <= 6 ? 9.5 : 9) : kind === "town" ? 8.2 : 7.4;
-      const rect = labelRect(x, y, place.label, fontSize, 0.57, 5);
+      const rect = labelRect(x, y, place.label, fontSize, 0.57, 7);
       // Keep lower zooms readable, but guarantee that every workbook place is
       // present at maximum native zoom even when neighboring labels overlap.
       if (zoom < maxNativeZoom && collides(rect, occupied)) return;
       occupied.push(rect);
       const fill = kind === "city" ? "#687873" : kind === "town" ? "#75847f" : "#82908b";
       const weight = kind === "city" ? 600 : 500;
-      output.push(`<circle cx="${x.toFixed(1)}" cy="${(y - 2).toFixed(1)}" r="${kind === "city" ? 1.5 : 1}" fill="${fill}"/>`);
-      output.push(`<text x="${x.toFixed(1)}" y="${(y + fontSize + 2).toFixed(1)}" text-anchor="middle" fill="${fill}" stroke="#edf2ec" stroke-width="2.4" paint-order="stroke" stroke-linejoin="round" font-family="DejaVu Sans, sans-serif" font-size="${fontSize}" font-weight="${weight}">${escapeXml(place.label)}</text>`);
+      output.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${kind === "city" ? 1.5 : 1}" fill="${fill}"/>`);
+      output.push(`<text x="${x.toFixed(1)}" y="${(y + fontSize + 4).toFixed(1)}" text-anchor="middle" fill="${fill}" stroke="#edf2ec" stroke-width="2.4" paint-order="stroke" stroke-linejoin="round" font-family="DejaVu Sans, sans-serif" font-size="${fontSize}" font-weight="${weight}">${escapeXml(place.label)}</text>`);
       placeCount += 1;
     });
 
