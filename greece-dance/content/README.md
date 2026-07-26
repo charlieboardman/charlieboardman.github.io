@@ -49,14 +49,13 @@ The hierarchy is straightforward:
 
 ## `Regions`
 
-The `Regions` sheet controls the browse tray and map views:
+The `Regions` sheet controls the browse tray and archive grouping:
 
 | Column | What goes in it |
 | --- | --- |
 | `id` | The permanent ID referenced by `Places.region`. |
 | `name_en` / `name_el` | Region names; at least one is required. |
 | `color` | A six-digit hex color such as `#e5a83f`. |
-| `south`, `west`, `north`, `east` | The map bounds used when the region is selected. |
 | `order` | A unique positive whole number controlling display order. |
 
 A region remains visible even when no place currently points to it.

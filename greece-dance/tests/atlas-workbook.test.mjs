@@ -70,7 +70,7 @@ function makeWorkbook(places) {
     "region", "subregion", "info", "kind", "min_zoom", "priority"
   ];
   const regionHeaders = [
-    "id", "name_en", "name_el", "color", "south", "west", "north", "east", "order"
+    "id", "name_en", "name_el", "color", "order"
   ];
   XLSX.utils.book_append_sheet(
     workbook,
@@ -81,7 +81,7 @@ function makeWorkbook(places) {
     workbook,
     XLSX.utils.json_to_sheet([{
       id: "test-region", name_en: "Test Region", name_el: "", color: "#336699",
-      south: 35, west: 20, north: 42, east: 28, order: 1
+      order: 1
     }], { header: regionHeaders }),
     "Regions"
   );

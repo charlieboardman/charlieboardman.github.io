@@ -79,7 +79,6 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     zoom: 6,
     minZoom: minNativeZoom,
     maxZoom: maxMapZoom,
-    maxBoundsViscosity: 1,
     zoomControl: false,
     attributionControl: true
   });
@@ -100,52 +99,6 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Place labels atlas.xlsx'
   }).addTo(map);
   L.control.zoom({ position: "bottomright" }).addTo(map);
-
-  // Match camera limits to the full Web Mercator tiles emitted around the data bounds.
-  function tileCoverageAtZoom(zoom) {
-    const scale = 2 ** zoom;
-    const longitudeToTile = (longitude) => ((longitude + 180) / 360) * scale;
-    const latitudeToTile = (latitude) => {
-      const radians = Math.max(-85.05112878, Math.min(85.05112878, latitude)) * Math.PI / 180;
-      return ((1 - Math.asinh(Math.tan(radians)) / Math.PI) / 2) * scale;
-    };
-    const tileToLongitude = (x) => (x / scale) * 360 - 180;
-    const tileToLatitude = (y) => Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale))) * 180 / Math.PI;
-    const minX = Math.floor(longitudeToTile(mapDataBounds.west));
-    const maxX = Math.floor(longitudeToTile(mapDataBounds.east - 1e-8));
-    const minY = Math.floor(latitudeToTile(mapDataBounds.north));
-    const maxY = Math.floor(latitudeToTile(mapDataBounds.south + 1e-8));
-
-    return {
-      bounds: L.latLngBounds(
-        [tileToLatitude(maxY + 1), tileToLongitude(minX)],
-        [tileToLatitude(minY), tileToLongitude(maxX + 1)]
-      ),
-      width: (maxX - minX + 1) * 256,
-      height: (maxY - minY + 1) * 256
-    };
-  }
-
-  function updateMapLimits() {
-    const viewport = map.getSize();
-    let minimumZoom = maxNativeZoom;
-    for (let zoom = minNativeZoom; zoom <= maxNativeZoom; zoom += 1) {
-      const coverage = tileCoverageAtZoom(zoom);
-      if (coverage.width >= viewport.x && coverage.height >= viewport.y) {
-        minimumZoom = zoom;
-        break;
-      }
-    }
-
-    map.setMinZoom(minimumZoom);
-    if (map.getZoom() < minimumZoom) map.setZoom(minimumZoom, { animate: false });
-    const coverage = tileCoverageAtZoom(Math.min(map.getZoom(), maxNativeZoom));
-    map.setMaxBounds(coverage.bounds);
-    map.panInsideBounds(coverage.bounds, { animate: false });
-  }
-
-  map.on("zoomend resize", updateMapLimits);
-  updateMapLimits();
 
   function setMapLanguage(language) {
     if (!supportedLanguages.includes(language)) return;
@@ -206,7 +159,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     });
     const marker = L.marker(village.coordinates, { icon, title: village.name, keyboard: true }).addTo(map);
     marker.bindTooltip(village.name, { className: "village-tooltip", direction: "top", offset: [0, -initialMarkerDiameter / 2] });
-    marker.on("click", () => selectVillage(village.id, true));
+    marker.on("click", () => selectVillage(village.id));
     marker.on("mouseover", () => setMarkerState(village.id, true));
     marker.on("mouseout", () => setMarkerState(village.id, activeVillage === village.id));
     markerById.set(village.id, marker);
@@ -222,7 +175,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
       const id = button.dataset.region === "all" ? null : button.dataset.region;
       button.addEventListener("mouseenter", () => previewRegion(id));
       button.addEventListener("mouseleave", () => previewRegion(activeRegion));
-      button.addEventListener("click", () => selectRegion(id, true));
+      button.addEventListener("click", () => selectRegion(id));
     });
     requestAnimationFrame(updateRegionTrayHeight);
   }
@@ -256,7 +209,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
       : `<p class="empty-state">No village records match that search.</p>`;
 
     els.villageList.querySelectorAll(".tree-village").forEach((button) => {
-      button.addEventListener("click", () => selectVillage(button.dataset.village, true));
+      button.addEventListener("click", () => selectVillage(button.dataset.village));
       button.addEventListener("mouseenter", () => setMarkerState(button.dataset.village, true));
       button.addEventListener("mouseleave", () => setMarkerState(button.dataset.village, activeVillage === button.dataset.village));
     });
@@ -356,19 +309,13 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     els.villageDetail.querySelector(".detail-back").addEventListener("click", showList);
   }
 
-  function selectRegion(id, moveMap = false) {
+  function selectRegion(id) {
     activeRegion = id;
     activeVillage = null;
     if (id) expandedRegions.add(id);
     els.regionList.querySelectorAll(".region-chip").forEach((chip) => chip.classList.toggle("is-active", (chip.dataset.region === "all" ? null : chip.dataset.region) === id));
     previewRegion(id);
     showList();
-
-    if (moveMap) {
-      const region = regions.find((item) => item.id === id);
-      if (region?.bounds) map.flyToBounds(region.bounds, { padding: [45, 45], maxZoom: 9, duration: .8 });
-      else if (!id) map.flyTo([39.25, 26.1], 6, { duration: .8 });
-    }
   }
 
   function previewRegion(id) {
@@ -378,7 +325,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     });
   }
 
-  function selectVillage(id, moveMap = false) {
+  function selectVillage(id) {
     const village = villageById.get(id);
     if (!village) return;
     activeVillage = id;
@@ -388,7 +335,6 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     els.villageDetail.hidden = false;
     els.panelTitle.hidden = true;
     els.archive.classList.add("is-detail", "is-open");
-    if (moveMap) map.flyTo(village.coordinates, Math.max(map.getZoom(), 9), { duration: .7 });
   }
 
   function setMarkerState(id, enabled) {
@@ -434,5 +380,5 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     renderRegions();
     renderVillages();
   }
-  window.addEventListener("load", () => map.invalidateSize());
+  window.addEventListener("load", () => map.invalidateSize({ pan: false }));
 })();

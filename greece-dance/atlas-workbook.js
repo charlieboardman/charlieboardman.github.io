@@ -21,7 +21,7 @@ const PLACE_HEADERS = [
   "region", "subregion", "info", "kind", "min_zoom", "priority"
 ];
 const REGION_HEADERS = [
-  "id", "name_en", "name_el", "color", "south", "west", "north", "east", "order"
+  "id", "name_en", "name_el", "color", "order"
 ];
 const PLACE_KINDS = new Set(["city", "town", "village"]);
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
@@ -55,20 +55,11 @@ export function parseAtlasWorkbook(workbook, XLSX) {
       fail("color must be a six-digit hex value such as #e5a83f.", "Regions", row, "color");
     }
 
-    const south = requiredNumber(values.south, "Regions", row, "south");
-    const west = requiredNumber(values.west, "Regions", row, "west");
-    const north = requiredNumber(values.north, "Regions", row, "north");
-    const east = requiredNumber(values.east, "Regions", row, "east");
-    if (south < -90 || north > 90 || west < -180 || east > 180 || south >= north || west >= east) {
-      fail("Bounds must use valid south, west, north, east values with increasing edges.", "Regions", row, "south");
-    }
-
     return {
       id,
       name: names.en || names.el,
       names,
       color,
-      bounds: [[south, west], [north, east]],
       order,
       villages: [],
       subregions: [],
