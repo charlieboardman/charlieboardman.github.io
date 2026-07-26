@@ -228,6 +228,19 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   map.on("moveend resize", scheduleMapLabelLayout);
   scheduleMapLabelLayout();
 
+  let hasFitInitialMapView = false;
+  function fitInitialMapView() {
+    if (hasFitInitialMapView || !villages.length) return;
+    hasFitInitialMapView = true;
+    const villageBounds = L.latLngBounds(villages.map((village) => village.coordinates));
+    const horizontalPadding = window.matchMedia("(max-width: 720px)").matches ? 24 : 48;
+    map.fitBounds(villageBounds, {
+      paddingTopLeft: [horizontalPadding, 20],
+      paddingBottomRight: [horizontalPadding, Math.ceil(els.regionTray.getBoundingClientRect().height) + 12],
+      animate: false
+    });
+  }
+
   function renderRegions() {
     els.regionList.innerHTML = `
       <button class="region-chip is-active" data-region="all" style="--region-color:#e16b55" role="listitem"><span class="region-chip-label">All regions</span></button>
@@ -441,10 +454,12 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   else {
     renderRegions();
     renderVillages();
+    requestAnimationFrame(fitInitialMapView);
   }
   document.fonts?.ready.then(scheduleMapLabelLayout);
   window.addEventListener("load", () => {
     map.invalidateSize({ pan: false });
+    fitInitialMapView();
     scheduleMapLabelLayout();
   });
 })();
