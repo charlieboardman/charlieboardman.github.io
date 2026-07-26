@@ -53,6 +53,8 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   const villageById = new Map(villages.map((village) => [village.id, village]));
 
   const els = {
+    mapStage: document.querySelector(".map-stage"),
+    regionTray: document.querySelector(".region-tray"),
     regionList: document.querySelector("#region-list"),
     villageList: document.querySelector("#village-list"),
     villageDetail: document.querySelector("#village-detail"),
@@ -161,17 +163,17 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   });
   setMapLanguage(mapLanguage);
 
-  els.regionList.addEventListener("wheel", (event) => {
-    if (els.regionList.scrollWidth <= els.regionList.clientWidth) return;
-    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-    if (!delta) return;
-    const atStart = els.regionList.scrollLeft <= 0;
-    const atEnd = els.regionList.scrollLeft + els.regionList.clientWidth >= els.regionList.scrollWidth - 1;
-    if ((delta < 0 && atStart) || (delta > 0 && atEnd)) return;
-    event.preventDefault();
-    const unit = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? els.regionList.clientWidth : 1;
-    els.regionList.scrollLeft += delta * unit;
-  }, { passive: false });
+  function updateRegionTrayHeight() {
+    const height = Math.ceil(els.regionTray.getBoundingClientRect().height);
+    els.mapStage.style.setProperty("--region-tray-height", `${height}px`);
+  }
+
+  if ("ResizeObserver" in window) {
+    new ResizeObserver(updateRegionTrayHeight).observe(els.regionTray);
+  } else {
+    window.addEventListener("resize", updateRegionTrayHeight);
+  }
+  updateRegionTrayHeight();
 
   const markerById = new Map();
   const expandedRegions = new Set();
@@ -213,8 +215,8 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
 
   function renderRegions() {
     els.regionList.innerHTML = `
-      <button class="region-chip is-active" data-region="all" style="--region-color:#e16b55" role="listitem">All regions</button>
-      ${regions.map((region) => `<button class="region-chip" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem">${escapeHtml(region.name)}</button>`).join("")}
+      <button class="region-chip is-active" data-region="all" style="--region-color:#e16b55" role="listitem"><span class="region-chip-label">All regions</span></button>
+      ${regions.map((region) => `<button class="region-chip" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(region.name)}"><span class="region-chip-label">${escapeHtml(region.name)}</span></button>`).join("")}
     `;
     els.regionList.querySelectorAll(".region-chip").forEach((button) => {
       const id = button.dataset.region === "all" ? null : button.dataset.region;
@@ -222,6 +224,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
       button.addEventListener("mouseleave", () => previewRegion(activeRegion));
       button.addEventListener("click", () => selectRegion(id, true));
     });
+    requestAnimationFrame(updateRegionTrayHeight);
   }
 
   function showContentError(error) {
