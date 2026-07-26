@@ -22,17 +22,17 @@ test("the canonical workbook contains the migrated client hierarchy", async () =
   );
 });
 
-test("has_dance false keeps a map label out of the interactive hierarchy", () => {
+test("has_dance false keeps a place out of the interactive hierarchy", () => {
   const workbook = makeWorkbook([
     {
       id: "dance-place", latitude: 40, longitude: 22, name_en: "Dance Place",
       name_el: "", has_dance: true, region: "test-region", subregion: "",
-      info: "Some **Markdown**.", kind: "village", min_zoom: 8, priority: 600
+      info: "Some **Markdown**.", kind: "village"
     },
     {
       id: "map-only", latitude: 41, longitude: 23, name_en: "Map Only",
       name_el: "", has_dance: false, region: "test-region", subregion: "Map Notes",
-      info: "", kind: "town", min_zoom: 7, priority: 700
+      info: "", kind: "town"
     }
   ]);
   const atlas = parseAtlasWorkbook(workbook, XLSX);
@@ -48,7 +48,7 @@ test("validation errors identify the sheet, row, and column", () => {
     {
       id: "broken-place", latitude: "", longitude: 22, name_en: "Broken Place",
       name_el: "", has_dance: true, region: "test-region", subregion: "",
-      info: "", kind: "village", min_zoom: 8, priority: 600
+      info: "", kind: "village"
     }
   ]);
 
@@ -67,7 +67,7 @@ function makeWorkbook(places) {
   const workbook = XLSX.utils.book_new();
   const placeHeaders = [
     "id", "latitude", "longitude", "name_en", "name_el", "has_dance",
-    "region", "subregion", "info", "kind", "min_zoom", "priority"
+    "region", "subregion", "info", "kind"
   ];
   const regionHeaders = [
     "id", "name_en", "name_el", "color", "order"

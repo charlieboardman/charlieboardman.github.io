@@ -1,8 +1,8 @@
 # Map geometry and rendering
 
-The builder downloads Natural Earth geometry and combines it with every place in
-`content/atlas.xlsx` to produce self-hosted raster tiles. The finished website
-contacts no map provider or place-name service.
+The builder downloads Natural Earth geometry and produces self-hosted,
+geometry-only raster tiles. The finished website contacts no map provider or
+place-name service.
 
 ## Geometry cache
 
@@ -26,16 +26,14 @@ No OpenStreetMap or Overpass data is fetched.
 npm run build:map
 ```
 
-The renderer reads the cached geometry plus `content/atlas.xlsx`, then replaces
-`assets/map/` with Web Mercator WebP tiles for zoom levels 5–9 under
-`assets/map/{language}/`. Each geographic tile contains 512 image pixels for a 256
-CSS-pixel tile, keeping labels sharp on high-density screens and when the static
-site scales beyond native zoom 9.
+The renderer reads the cached geometry, then replaces `assets/map/` with Web
+Mercator WebP tiles for zoom levels 5–9. Each geographic tile contains 512 image
+pixels for a 256 CSS-pixel tile, keeping borders sharp on high-density screens
+and when the static site scales beyond native zoom 9.
 
-English and Greek tile sets are generated. Missing translated labels fall back to
-the other workbook name. Country labels come from Natural Earth; populated-place
-labels come only from the `Places` sheet in `atlas.xlsx`. OpenStreetMap and
-Overpass are not used.
+The tiles contain no text. Village labels come from `content/atlas.xlsx` and are
+rendered by the browser as a collision-aware interactive overlay. OpenStreetMap
+and Overpass are not used.
 
 ## Licensing
 

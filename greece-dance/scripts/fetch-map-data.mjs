@@ -6,8 +6,8 @@ const outputDir = path.join(root, "map-source", "data");
 const force = process.argv.includes("--force");
 await mkdir(outputDir, { recursive: true });
 
-// Clean up place data created by the former OSM/Overpass pipeline. Place labels
-// now live exclusively in content/atlas.xlsx.
+// Clean up place data created by the former OSM/Overpass pipeline. The raster
+// tiles contain geometry only; interactive labels are rendered in the browser.
 await Promise.all([
   rm(path.join(outputDir, "osm-places.json"), { force: true }),
   rm(path.join(outputDir, "overpass-cache"), { recursive: true, force: true })
@@ -34,12 +34,12 @@ const metadata = {
   generatedAt: new Date().toISOString(),
   bounds: { south: 34, west: 18, north: 43.5, east: 34.5 },
   naturalEarth: "https://www.naturalearthdata.com/",
-  placeLabels: "content/atlas.xlsx"
+  labels: "interactive browser overlay"
 };
 await writeFile(path.join(outputDir, "metadata.json"), `${JSON.stringify(metadata, null, 2)}\n`);
 
 for (const file of files) JSON.parse(await readFile(path.join(outputDir, file.name), "utf8"));
-console.log("Natural Earth map geometry is ready. Curated place labels come from content/atlas.xlsx.");
+console.log("Natural Earth map geometry is ready.");
 
 async function download({ name, url }) {
   const destination = path.join(outputDir, name);

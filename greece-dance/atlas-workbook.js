@@ -18,7 +18,7 @@ export class AtlasWorkbookError extends Error {
 
 const PLACE_HEADERS = [
   "id", "latitude", "longitude", "name_en", "name_el", "has_dance",
-  "region", "subregion", "info", "kind", "min_zoom", "priority"
+  "region", "subregion", "info", "kind"
 ];
 const REGION_HEADERS = [
   "id", "name_en", "name_el", "color", "order"
@@ -89,12 +89,6 @@ export function parseAtlasWorkbook(workbook, XLSX) {
     if (!PLACE_KINDS.has(kind)) {
       fail("kind must be city, town, or village.", "Places", row, "kind");
     }
-    const minZoom = optionalNumber(values.min_zoom, 8, "Places", row, "min_zoom");
-    if (!Number.isInteger(minZoom) || minZoom < 5 || minZoom > 9) {
-      fail("min_zoom must be a whole number from 5 through 9.", "Places", row, "min_zoom");
-    }
-    const priority = optionalNumber(values.priority, 600, "Places", row, "priority");
-
     if (hasDance && !regionId) {
       fail("region is required when has_dance is true.", "Places", row, "region");
     }
@@ -106,8 +100,6 @@ export function parseAtlasWorkbook(workbook, XLSX) {
       lat,
       lon,
       kind,
-      minZoom,
-      priority,
       names,
       name: names.en || names.el,
       hasDance,
@@ -225,13 +217,6 @@ function optionalText(value, trim = true) {
 
 function requiredNumber(value, sheet, row, column) {
   if (String(value ?? "").trim() === "") fail("This cell is required.", sheet, row, column);
-  const result = Number(value);
-  if (!Number.isFinite(result)) fail("This cell must be a number.", sheet, row, column);
-  return result;
-}
-
-function optionalNumber(value, fallback, sheet, row, column) {
-  if (String(value ?? "").trim() === "") return fallback;
   const result = Number(value);
   if (!Number.isFinite(result)) fail("This cell must be a number.", sheet, row, column);
   return result;

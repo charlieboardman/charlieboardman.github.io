@@ -67,16 +67,19 @@ button { color: inherit; }
 .region-chip:hover, .region-chip.is-active { background: var(--ink); color: var(--white); }
 .region-chip:hover::after, .region-chip.is-active::after { transform: scaleX(1); }
 .region-chip:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
-.village-icon { background: transparent; border: 0; }
-.village-marker-scale { width: 18px; height: 18px; transform: scale(var(--marker-scale, .5)); transform-origin: center; transition: transform .18s ease; }
+.village-icon { overflow: visible !important; background: transparent; border: 0; }
+.village-marker-shell { position: relative; width: 18px; height: 18px; }
+.village-marker-scale { position: absolute; inset: 0; transform: scale(var(--marker-scale, .5)); transform-origin: center; transition: transform .18s ease; }
 .village-marker { position: relative; flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: var(--marker-color); border: 1px solid rgba(255,253,248,.95); box-shadow: 0 1px 4px rgba(21,39,37,.3); transition: transform .18s ease, opacity .18s ease, box-shadow .18s ease; }
 .village-marker::after { content: ""; position: absolute; inset: -3px; border: .5px solid var(--marker-color); border-radius: 50%; opacity: 0; transform: scale(.5); transition: .2s ease; }
 .village-marker:hover, .village-marker.is-active { transform: scale(1.32); box-shadow: 0 1.5px 6px rgba(21,39,37,.4); }
 .village-marker:hover::after, .village-marker.is-active::after { opacity: .65; transform: scale(1); }
 .village-marker.is-muted { opacity: .16; transform: scale(.74); }
-.leaflet-tooltip.village-tooltip { padding: 8px 11px; background: var(--ink); color: var(--white); border: 0; border-radius: 0; box-shadow: none; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
-.leaflet-tooltip-left.village-tooltip::before { border-left-color: var(--ink); }
-.leaflet-tooltip-right.village-tooltip::before { border-right-color: var(--ink); }
+.village-map-label { position: absolute; z-index: 1; left: 50%; top: 21px; width: max-content; transform: translateX(-50%); color: #75847f; font: 500 12px/1 "DM Sans", sans-serif; text-align: center; white-space: nowrap; opacity: 0; pointer-events: none; paint-order: stroke fill; -webkit-text-stroke: 2.4px #edf2ec; text-shadow: 0 0 1px #edf2ec; transition: opacity .12s ease; }
+.are-village-labels-collision-free .village-map-label,
+.village-icon:hover .village-map-label,
+.village-icon:focus .village-map-label,
+.village-icon:focus-visible .village-map-label { opacity: 1; }
 .archive-panel { height: 100%; min-width: 0; min-height: 0; overflow: hidden; background: var(--paper); border-left: 1px solid var(--line); display: flex; flex-direction: column; z-index: 20; }
 .panel-header { display: none; align-items: start; justify-content: space-between; padding: 28px 28px 20px; }
 .archive-panel.has-panel-title .panel-header { display: flex; }

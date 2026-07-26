@@ -90,31 +90,41 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     if (supportedLanguages.includes(savedLanguage)) mapLanguage = savedLanguage;
   } catch {}
 
-  const basemap = L.tileLayer(`assets/map/${mapLanguage}/{z}/{x}/{y}.webp`, {
+  const basemap = L.tileLayer("assets/map/{z}/{x}/{y}.webp", {
     minNativeZoom,
     maxNativeZoom,
     maxZoom: maxMapZoom,
     noWrap: true,
     bounds: [[mapDataBounds.south, mapDataBounds.west], [mapDataBounds.north, mapDataBounds.east]],
-    attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Place labels atlas.xlsx'
+    attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Village data atlas.xlsx'
   }).addTo(map);
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
   function setMapLanguage(language) {
     if (!supportedLanguages.includes(language)) return;
     mapLanguage = language;
-    basemap.setUrl(`assets/map/${language}/{z}/{x}/{y}.webp`);
     els.languageOptions.querySelectorAll(".language-button").forEach((button) => {
       button.classList.toggle("is-active", button.dataset.language === language);
       button.setAttribute("aria-pressed", String(button.dataset.language === language));
     });
+    markerById.forEach((marker, villageId) => {
+      const village = villageById.get(villageId);
+      const label = villageLabel(village);
+      const element = marker.getElement();
+      const labelElement = element?.querySelector(".village-map-label");
+      if (labelElement) labelElement.textContent = label;
+      if (element) {
+        element.title = label;
+        element.setAttribute("aria-label", label);
+      }
+    });
+    scheduleMapLabelLayout();
     try { localStorage.setItem("dance-atlas-language", language); } catch {}
   }
 
   els.languageOptions.querySelectorAll(".language-button").forEach((button) => {
     button.addEventListener("click", () => setMapLanguage(button.dataset.language));
   });
-  setMapLanguage(mapLanguage);
 
   function updateRegionTrayHeight() {
     const height = Math.ceil(els.regionTray.getBoundingClientRect().height);
@@ -144,27 +154,79 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     const scale = diameter / maximumMarkerDiameter;
     markerById.forEach((marker) => {
       marker.getElement()?.querySelector(".village-marker-scale")?.style.setProperty("--marker-scale", scale.toFixed(4));
-      marker.getTooltip().options.offset = L.point(0, -diameter / 2);
     });
+    scheduleMapLabelLayout();
+  }
+
+  function villageLabel(village) {
+    return village.names[mapLanguage] || village.names.en || village.names.el;
+  }
+
+  let labelLayoutFrame = null;
+  function scheduleMapLabelLayout() {
+    if (labelLayoutFrame !== null) cancelAnimationFrame(labelLayoutFrame);
+    labelLayoutFrame = requestAnimationFrame(() => {
+      labelLayoutFrame = requestAnimationFrame(() => {
+        labelLayoutFrame = null;
+        updateMapLabelLayout();
+      });
+    });
+  }
+
+  function updateMapLabelLayout() {
+    const items = [...markerById.values()].flatMap((marker) => {
+      const element = marker.getElement();
+      const label = element?.querySelector(".village-map-label");
+      const dot = element?.querySelector(".village-marker");
+      return label && dot ? [{ label: label.getBoundingClientRect(), dot: dot.getBoundingClientRect() }] : [];
+    });
+    const padding = 2;
+    const collisionFree = items.every((item, index) =>
+      items.slice(index + 1).every((other) =>
+        !rectanglesOverlap(item.label, other.label, padding)
+        && !rectanglesOverlap(item.label, other.dot, padding)
+        && !rectanglesOverlap(other.label, item.dot, padding)
+      )
+    );
+    map.getContainer().classList.toggle("are-village-labels-collision-free", collisionFree);
+  }
+
+  function rectanglesOverlap(first, second, padding = 0) {
+    return !(
+      first.right + padding <= second.left
+      || first.left >= second.right + padding
+      || first.bottom + padding <= second.top
+      || first.top >= second.bottom + padding
+    );
   }
 
   const initialMarkerDiameter = markerDiameterAtZoom(map.getZoom());
   const initialMarkerScale = initialMarkerDiameter / maximumMarkerDiameter;
   villages.forEach((village) => {
+    const label = villageLabel(village);
     const icon = L.divIcon({
       className: "village-icon",
-      html: `<div class="village-marker-scale" style="--marker-scale:${initialMarkerScale.toFixed(4)}"><div class="village-marker" data-village="${escapeAttribute(village.id)}" style="--marker-color:${escapeAttribute(village.regionColor)}"></div></div>`,
+      html: `
+        <div class="village-marker-shell">
+          <div class="village-marker-scale" style="--marker-scale:${initialMarkerScale.toFixed(4)}">
+            <div class="village-marker" data-village="${escapeAttribute(village.id)}" style="--marker-color:${escapeAttribute(village.regionColor)}"></div>
+          </div>
+          <span class="village-map-label">${escapeHtml(label)}</span>
+        </div>
+      `,
       iconSize: [maximumMarkerDiameter, maximumMarkerDiameter],
       iconAnchor: [maximumMarkerDiameter / 2, maximumMarkerDiameter / 2]
     });
-    const marker = L.marker(village.coordinates, { icon, title: village.name, keyboard: true }).addTo(map);
-    marker.bindTooltip(village.name, { className: "village-tooltip", direction: "top", offset: [0, -initialMarkerDiameter / 2] });
+    const marker = L.marker(village.coordinates, { icon, title: label, alt: label, keyboard: true }).addTo(map);
     marker.on("click", () => selectVillage(village.id));
     marker.on("mouseover", () => setMarkerState(village.id, true));
     marker.on("mouseout", () => setMarkerState(village.id, activeVillage === village.id));
     markerById.set(village.id, marker);
   });
+  setMapLanguage(mapLanguage);
   map.on("zoomend", updateMarkerScale);
+  map.on("moveend resize", scheduleMapLabelLayout);
+  scheduleMapLabelLayout();
 
   function renderRegions() {
     els.regionList.innerHTML = `
@@ -380,5 +442,9 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     renderRegions();
     renderVillages();
   }
-  window.addEventListener("load", () => map.invalidateSize({ pan: false }));
+  document.fonts?.ready.then(scheduleMapLabelLayout);
+  window.addEventListener("load", () => {
+    map.invalidateSize({ pan: false });
+    scheduleMapLabelLayout();
+  });
 })();

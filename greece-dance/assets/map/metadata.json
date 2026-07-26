@@ -9,11 +9,5 @@
   "maxNativeZoom": 9,
   "tileSize": 256,
   "tilePixelRatio": 2,
-  "languages": [
-    "en",
-    "el"
-  ],
-  "placeSource": "content/atlas.xlsx",
-  "placeCount": 42,
-  "dancePlaceCount": 42
+  "labels": "interactive browser overlay"
 }

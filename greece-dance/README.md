@@ -6,8 +6,9 @@ in this one directory.
 - [`content/atlas.xlsx`](content/atlas.xlsx) is the canonical database.
 - The browser reads that workbook directly on every page load. Interactive content
   changes need no build step and no GitHub Action.
-- The same workbook supplies all populated-place labels to the map builder.
-- [`assets/map/`](assets/map/) contains the prebuilt English and Greek map tiles
+- The browser renders village labels from the workbook as an interactive map
+  overlay.
+- [`assets/map/`](assets/map/) contains the prebuilt, geometry-only map tiles
   served by the static site.
 
 The published app is:
@@ -18,7 +19,7 @@ The published app is:
 Open `content/atlas.xlsx` in Excel, LibreOffice, Google Sheets or another
 spreadsheet editor. Commit the saved file and refresh the site. The `has_dance`
 column explicitly decides whether a place gets an interactive dot and archive
-entry; every place is available to the map builder.
+entry.
 
 The complete workbook schema and editing guide are in
 [`content/README.md`](content/README.md).
@@ -37,8 +38,8 @@ do not allow the page to `fetch()` its workbook from a `file:` URL.
 
 ## Rebuilding the map
 
-This is only necessary after changing names, coordinates, `kind`, `min_zoom`, or
-`priority` and wanting those edits baked into the background map.
+This is only necessary after changing the map geometry source or rendering style.
+Workbook edits never require a tile rebuild.
 
 ```bash
 npm install
