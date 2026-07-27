@@ -49,7 +49,7 @@ The `Regions` sheet controls the browse tray and archive grouping:
 | `id` | The permanent ID referenced by `Places.region`. |
 | `name_en` / `name_el` | Region names; at least one is required. |
 | `color` | A six-digit hex color such as `#e5a83f`. |
-| `order` | A unique positive whole number controlling display order. |
+| `order` | A unique positive whole number retained for workbook compatibility. Regions display alphabetically by name. |
 
 A region remains visible even when no place currently points to it.
 

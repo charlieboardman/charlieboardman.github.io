@@ -1,4 +1,5 @@
 import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
+import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentation.js";
 
 (async () => {
   let regions = [];
@@ -11,7 +12,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     const response = await fetch(atlasUrl, { cache: "no-store" });
     if (!response.ok) throw new Error(`Could not load content/atlas.xlsx (HTTP ${response.status}).`);
     const workbook = window.XLSX.read(await response.arrayBuffer(), { type: "array" });
-    regions = parseAtlasWorkbook(workbook, window.XLSX).regions;
+    regions = sortRegionsAlphabetically(parseAtlasWorkbook(workbook, window.XLSX).regions);
   } catch (error) {
     contentError = error;
     console.error("Atlas content error:", error);
@@ -180,10 +181,6 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     return village.names[mapLanguage] || village.names.en || village.names.el;
   }
 
-  function trayRegionLabel(regionName) {
-    return regionName.replace(/\s*\([^)]*\)/g, "").replace(/\s{2,}/g, " ").trim();
-  }
-
   let labelLayoutFrame = null;
   function scheduleMapLabelLayout() {
     if (labelLayoutFrame !== null) cancelAnimationFrame(labelLayoutFrame);
@@ -290,7 +287,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   function renderRegions() {
     els.regionList.innerHTML = `
       <button class="region-chip is-active" data-region="all" style="--region-color:#e16b55" role="listitem"><span class="region-chip-label">All regions</span></button>
-      ${regions.map((region) => `<button class="region-chip" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(region.name)}"><span class="region-chip-label">${escapeHtml(trayRegionLabel(region.name))}</span></button>`).join("")}
+      ${regions.map((region) => `<button class="region-chip" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(region.name)}"><span class="region-chip-label">${escapeHtml(regionDisplayName(region.name))}</span></button>`).join("")}
     `;
     els.regionList.querySelectorAll(".region-chip").forEach((button) => {
       const id = button.dataset.region === "all" ? null : button.dataset.region;
@@ -378,7 +375,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
         <summary class="tree-summary tree-region-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-swatch" aria-hidden="true"></span>
-          <span class="tree-label">${escapeHtml(region.name)}</span>
+          <span class="tree-label">${escapeHtml(regionDisplayName(region.name))}</span>
           <span class="tree-count" aria-label="${count} ${count === 1 ? "village" : "villages"}">${count}</span>
         </summary>
         <div class="tree-region-children">
@@ -482,7 +479,8 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     els.villageDetail.hidden = true;
     els.villageList.hidden = false;
     els.archive.classList.remove("is-detail");
-    const panelTitle = activeRegion ? regions.find((region) => region.id === activeRegion).name : "";
+    const selectedRegion = activeRegion ? regions.find((region) => region.id === activeRegion) : null;
+    const panelTitle = selectedRegion ? regionDisplayName(selectedRegion.name) : "";
     els.panelTitle.textContent = panelTitle;
     els.panelTitle.hidden = !panelTitle;
     els.archive.classList.toggle("has-panel-title", Boolean(panelTitle));
