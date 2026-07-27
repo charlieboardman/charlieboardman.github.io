@@ -98,6 +98,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     pitchWithRotate: false,
     style: {
       version: 8,
+      glyphs: "https://vector.openstreetmap.org/styles/shortbread/fonts/{fontstack}/{range}.pbf",
       sources: {
         shortbread: {
           type: "vector",
@@ -159,6 +160,34 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
           paint: {
             "line-color": "#b7c5bd",
             "line-width": 1
+          }
+        },
+        {
+          id: "country-labels",
+          type: "symbol",
+          source: "shortbread",
+          "source-layer": "boundary_labels",
+          filter: ["==", ["to-number", ["get", "admin_level"]], 2],
+          layout: {
+            "text-field": ["coalesce", ["get", "name_en"], ["get", "name"]],
+            "text-font": ["noto_sans_regular"],
+            "text-size": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              5, 10,
+              8, 13
+            ],
+            "text-letter-spacing": 0.12,
+            "text-transform": "uppercase",
+            "text-max-width": 10,
+            "text-padding": 4
+          },
+          paint: {
+            "text-color": "#7c8982",
+            "text-halo-color": "rgba(237, 242, 236, 0.85)",
+            "text-halo-width": 1.5,
+            "text-halo-blur": 0.5
           }
         }
       ]

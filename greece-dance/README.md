@@ -9,8 +9,8 @@ application and requires no build or deployment service.
 - The browser renders localized village labels from the Markdown as an
   interactive map overlay.
 - The map reads OpenStreetMap Shortbread vector tiles at runtime and renders
-  only land, water and administrative boundaries. It deliberately omits
-  provider place labels so the atlas labels remain prominent.
+  land, water, administrative boundaries and country names. It deliberately
+  omits provider city and village labels so the atlas labels remain prominent.
 
 The published app is:
 <https://charlieboardman.github.io/greece-dance/>
