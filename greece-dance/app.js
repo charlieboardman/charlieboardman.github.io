@@ -77,6 +77,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   const map = L.map("map", {
     center: [39.25, 26.1],
     zoom: 6,
+    zoomSnap: 0.1,
     minZoom: minNativeZoom,
     maxZoom: maxMapZoom,
     zoomControl: false,
@@ -99,6 +100,15 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Village data atlas.xlsx'
   }).addTo(map);
   L.control.zoom({ position: "bottomright" }).addTo(map);
+
+  function tileCoverageCenterLongitude(zoom) {
+    const scale = 2 ** zoom;
+    const longitudeToTile = (longitude) => ((longitude + 180) / 360) * scale;
+    const tileToLongitude = (x) => (x / scale) * 360 - 180;
+    const minX = Math.floor(longitudeToTile(mapDataBounds.west));
+    const maxX = Math.floor(longitudeToTile(mapDataBounds.east - 1e-8));
+    return (tileToLongitude(minX) + tileToLongitude(maxX + 1)) / 2;
+  }
 
   function setMapLanguage(language) {
     if (!supportedLanguages.includes(language)) return;
@@ -239,6 +249,24 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
       paddingBottomRight: [horizontalPadding, Math.ceil(els.regionTray.getBoundingClientRect().height) + 12],
       animate: false
     });
+    const tileZoom = Math.max(minNativeZoom, Math.min(maxNativeZoom, Math.round(map.getZoom())));
+    const fittedCenter = map.getCenter();
+    const fittedZoom = map.getZoom();
+    const villagePoints = villages.map((village) => map.project(village.coordinates, fittedZoom));
+    const viewportWidth = map.getSize().x;
+    const minimumCenterX = Math.max(...villagePoints.map((point) => point.x)) - (viewportWidth / 2) + horizontalPadding;
+    const maximumCenterX = Math.min(...villagePoints.map((point) => point.x)) + (viewportWidth / 2) - horizontalPadding;
+    const coverageCenter = map.project(
+      [fittedCenter.lat, tileCoverageCenterLongitude(tileZoom)],
+      fittedZoom
+    );
+    coverageCenter.x = Math.max(minimumCenterX, Math.min(maximumCenterX, coverageCenter.x));
+    const centeredView = map.unproject(coverageCenter, fittedZoom);
+    map.setView(
+      centeredView,
+      fittedZoom,
+      { animate: false }
+    );
   }
 
   function renderRegions() {
@@ -454,12 +482,10 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   else {
     renderRegions();
     renderVillages();
-    requestAnimationFrame(fitInitialMapView);
   }
-  document.fonts?.ready.then(scheduleMapLabelLayout);
-  window.addEventListener("load", () => {
+  Promise.resolve(document.fonts?.ready).then(() => requestAnimationFrame(() => {
     map.invalidateSize({ pan: false });
     fitInitialMapView();
     scheduleMapLabelLayout();
-  });
+  }));
 })();
