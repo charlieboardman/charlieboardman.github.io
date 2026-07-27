@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CFDI ZIP → XLSX Converter</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --border: #e3e3e3;
+      --text: #1a1a1a;
+      --muted: #6b6b6b;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --err: #dc2626;
+      --drop: #2563eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+    header h1 {
+      margin: 0 0 0.25rem;
+      font-size: 1.5rem;
+    }
+    header .sub {
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    /* dropzone */
+    .dropzone {
+      display: block;
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      background: var(--panel);
+      transition: border-color .15s, background .15s;
+      cursor: pointer;
+    }
+    .dropzone:hover { border-color: var(--accent); }
+    .dropzone.drag {
+      border-color: var(--drop);
+      background: var(--accent-soft);
+    }
+    .dropzone .big {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .dropzone .hint {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .dropzone input[type=file] { display: none; }
+    .filelist {
+      margin: 0.75rem 0 0;
+      text-align: left;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .filelist .chip {
+      display: inline-block;
+      background: #eef2f7;
+      border-radius: 6px;
+      padding: 0.15rem 0.5rem;
+      margin: 0.2rem 0.2rem 0 0;
+    }
+    .filelist .chip .rm {
+      cursor: pointer;
+      color: var(--muted);
+      margin-left: 0.35rem;
+      font-weight: 700;
+    }
+    .filelist .chip .rm:hover { color: var(--err); }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    button {
+      font: inherit;
+      padding: 0.6rem 1.2rem;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      cursor: pointer;
+      transition: background .12s, border-color .12s;
+    }
+    button:hover:not(:disabled) { border-color: var(--accent); }
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    button.primary:hover:not(:disabled) { background: #1d4ed8; }
+    button:disabled { opacity: .5; cursor: default; }
+
+    .privacy {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-left: auto;
+    }
+    .privacy .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--ok);
+      display: inline-block;
+    }
+
+    /* progress */
+    .progress-wrap { margin-top: 1.25rem; }
+    .progress-bar {
+      height: 10px;
+      border-radius: 6px;
+      background: #ececec;
+      overflow: hidden;
+    }
+    .progress-bar > div {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width .15s ease;
+    }
+    .progress-label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 0.35rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* summary */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 0.9rem;
+    }
+    .stat .n {
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat .l {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 0.25rem;
+    }
+    .stat.skipped .n { color: var(--warn); }
+    .stat.errors .n { color: var(--err); }
+
+    /* log */
+    #log {
+      white-space: pre-wrap;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      max-height: 240px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem;
+      margin-top: 1.25rem;
+    }
+    #log:empty::before {
+      content: "Log will appear here.";
+      color: var(--muted);
+      font-style: italic;
+    }
+    .err-line { color: var(--err); }
+    .ok-line { color: var(--ok); }
+
+    footer {
+      margin-top: 1.5rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>CFDI ZIP → XLSX Converter</h1>
+      <p class="sub">Drop a ZIP of CFDI XMLs downloaded from the SAT portal. Extracts ingresos only (TipoDeComprobante = I), with UUID, taxes, and manual bookkeeping columns. Nothing leaves your browser.</p>
+    </header>
+
+    <label class="dropzone" id="dropzone">
+      <div class="big">Drop .zip files here, or click to select</div>
+      <div class="hint">One or more ZIPs · each containing CFDI XML · processed locally</div>
+      <div class="filelist" id="filelist"></div>
+      <input id="fileInput" type="file" accept=".zip,application/zip,application/x-zip-compressed" multiple />
+    </label>
+
+    <div class="actions">
+      <button id="convertBtn" class="primary" disabled>Convert to XLSX</button>
+      <button id="clearBtn" disabled>Clear</button>
+      <span class="privacy"><span class="dot"></span> 100% client-side — no upload</span>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"><div id="progFill"></div></div>
+      <div class="progress-label">
+        <span id="progText">Idle</span>
+        <span id="progPct"></span>
+      </div>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div id="log"></div>
+
+    <footer>
+      Built for balancing the bank account against facturas recibidas. Income (I) only — payment complements (P) are skipped. See <a href="legacy/">legacy/</a> for the older versions.
+    </footer>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <!-- SheetJS: use the official self-hosted CDN (npm build is stale / has CVEs) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+  <script>
+  "use strict";
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const fileInput = $("fileInput");
+    const dropzone = $("dropzone");
+    const filelistEl = $("filelist");
+    const convertBtn = $("convertBtn");
+    const clearBtn = $("clearBtn");
+    const progFill = $("progFill");
+    const progText = $("progText");
+    const progPct = $("progPct");
+    const summaryEl = $("summary");
+    const logEl = $("log");
+
+    const CFDI_NS = "http://www.sat.gob.mx/cfd/4";
+    const TFD_NS = "http://www.sat.gob.mx/TimbreFiscalDigital";
+
+    // IVA tasa → bucket label. 002 at 0.16 / 0.08 / 0.00 → IVA16/IVA8/IVA0
+    function ivaBucket(tasa) {
+      const t = parseFloat(tasa);
+      if (t >= 0.16) return "IVA16";
+      if (t > 0 && t < 0.16) return "IVA8";
+      return "IVA0";
+    }
+
+    /* ---------- logging ---------- */
+    function log(msg, cls) {
+      const line = document.createElement("div");
+      line.textContent = msg;
+      if (cls) line.className = cls;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    function clearLog() { logEl.replaceChildren(); }
+
+    function setProgress(done, total, label) {
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      progFill.style.width = pct + "%";
+      progPct.textContent = total ? pct + "%" : "";
+      progText.textContent = label || (total ? `${done} / ${total}` : "Idle");
+    }
+
+    function renderSummary({ kept, skipped, errors, total }) {
+      const stats = [
+        { n: kept, l: "Ingresos (I) kept" },
+        { n: skipped, l: "Skipped (P / other)", cls: "skipped" },
+        { n: errors, l: "Parse errors", cls: "errors" },
+        { n: total, l: "XML files seen" },
+      ];
+      summaryEl.replaceChildren(
+        ...stats.map((s) => {
+          const el = document.createElement("div");
+          el.className = "stat" + (s.cls ? " " + s.cls : "");
+          el.innerHTML = `<div class="n">${s.n}</div><div class="l">${s.l}</div>`;
+          return el;
+        })
+      );
+    }
+
+    /* ---------- XML helpers ---------- */
+    const getAttr = (node, a) => (node && node.getAttribute(a)) || "";
+    // First element with tag/ns that is a DIRECT child of parent.
+    // CFDI repeats Impuestos/Traslado inside Conceptos; the comprobante-level
+    // node (with the authoritative totals) is a direct child of Comprobante.
+    function directChild(parent, ns, tag) {
+      const els = parent.getElementsByTagNameNS(ns, tag);
+      for (const el of els) if (el.parentNode === parent) return el;
+      return null;
+    }
+    function all(parent, ns, tag) {
+      return Array.from(parent.getElementsByTagNameNS(ns, tag));
+    }
+    function num(v) {
+      if (v === "" || v == null) return null;
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    /* ---------- CFDI XML → row ---------- */
+    function parseCFDI(xmlText) {
+      // Strip a UTF-8 BOM if present (SAT downloads carry one); browsers tolerate
+      // it but stripping keeps parser behavior uniform.
+      if (xmlText.charCodeAt(0) === 0xFEFF) xmlText = xmlText.slice(1);
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlText, "application/xml");
+      const parseError = doc.querySelector("parsererror");
+      if (parseError) throw new Error(parseError.textContent || "XML parse error");
+
+      const comprobante = doc.documentElement;
+      const ns = comprobante.namespaceURI || CFDI_NS;
+      const tipo = getAttr(comprobante, "TipoDeComprobante");
+
+      // Only keep income (I). P = payment complement, E/N = egreso/nómina, etc.
+      if (tipo !== "I") {
+        return { skip: true, tipo };
+      }
+
+      const emisor = directChild(comprobante, ns, "Emisor");
+      const receptor = directChild(comprobante, ns, "Receptor");
+      const conceptos = all(doc, ns, "Concepto");
+      const tfd = doc.getElementsByTagNameNS(TFD_NS, "TimbreFiscalDigital")[0] || null;
+
+      // Comprobante-level Impuestos (the authoritative totals) is a direct
+      // child of Comprobante. Each Concepto also has its own <Impuestos>, so a
+      // naive first-match grabs the wrong one.
+      const impRoot = directChild(comprobante, ns, "Impuestos");
+      const totalTrasladados = num(getAttr(impRoot, "TotalImpuestosTrasladados"));
+      const totalRetenidos = num(getAttr(impRoot, "TotalImpuestosRetenidos"));
+
+      // Traslado/Retencion live inside <Traslados>/<Retenciones> wrappers under
+      // the comprobante-level Impuestos (not as direct children of Impuestos).
+      const trasladosWrap = impRoot ? directChild(impRoot, ns, "Traslados") : null;
+      const retencionesWrap = impRoot ? directChild(impRoot, ns, "Retenciones") : null;
+      const tras = trasladosWrap ? all(trasladosWrap, ns, "Traslado") : [];
+      const rets = retencionesWrap ? all(retencionesWrap, ns, "Retencion") : [];
+      // Buckets: iva0, iva8, iva16, ieps, isr_retenido, iva_retenido
+      let iva0 = 0, iva8 = 0, iva16 = 0, ieps = 0;
+      for (const t of tras) {
+        const imp = getAttr(t, "Impuesto");
+        const importe = num(getAttr(t, "Importe")) || 0;
+        if (imp === "002") {
+          const b = ivaBucket(getAttr(t, "TasaOCuota"));
+          if (b === "IVA16") iva16 += importe;
+          else if (b === "IVA8") iva8 += importe;
+          else iva0 += importe;
+        } else if (imp === "003") {
+          ieps += importe;
+        }
+      }
+      let isr_retenido = 0, iva_retenido = 0;
+      for (const r of rets) {
+        const imp = getAttr(r, "Impuesto");
+        const importe = num(getAttr(r, "Importe")) || 0;
+        if (imp === "001") isr_retenido += importe;
+        else if (imp === "002") iva_retenido += importe;
+      }
+
+      const fecha = getAttr(comprobante, "Fecha");
+      const [fecha_d = "", hora = ""] = fecha.includes("T") ? fecha.split("T") : [fecha, ""];
+
+      const descriptions = conceptos
+        .map((c) => getAttr(c, "Descripcion"))
+        .filter(Boolean);
+
+      return {
+        skip: false,
+        row: {
+          uuid: getAttr(tfd, "UUID"),
+          date: fecha_d,
+          subtotal: num(getAttr(comprobante, "SubTotal")),
+          discount: num(getAttr(comprobante, "Descuento")),
+          total: num(getAttr(comprobante, "Total")),
+
+          issuer_rfc: getAttr(emisor, "Rfc"),
+          issuer_name: getAttr(emisor, "Nombre"),
+
+          recipient_rfc: getAttr(receptor, "Rfc"),
+
+
+          // Taxes
+          iva0: round(iva0),
+          iva8: round(iva8),
+          iva16: round(iva16),
+          ieps: round(ieps),
+          total_transferred_tax: round((iva0 + iva8 + iva16 + ieps)),
+          isr_withheld: round(isr_retenido),
+          iva_withheld: round(iva_retenido),
+          total_withheld: round(isr_retenido + iva_retenido),
+          declared_total_transferred: totalTrasladados,
+          declared_total_withheld: totalRetenidos,
+
+          // Concepto summary
+          line_items: conceptos.length,
+          descriptions: descriptions.join(" | "),
+
+          // Manual bookkeeping columns (left blank for the user)
+          check_number: "",
+          bank_statement_month: "",
+          bank_statement_id: "",
+        },
+      };
+    }
+
+    function round(n) {
+      return Math.round((n + Number.EPSILON) * 100) / 100;
+    }
+
+    /* ---------- ZIP → rows ---------- */
+    async function readZip(file) {
+      const zip = await JSZip.loadAsync(file);
+      const entries = Object.values(zip.files).filter(
+        (f) => !f.dir && /\.xml$/i.test(f.name)
+      );
+      return { entries, zip };
+    }
+
+    const HEADERS = [
+      "uuid", "date",
+      "subtotal", "discount", "total",
+      "issuer_rfc", "issuer_name",
+      "recipient_rfc",
+      "iva0", "iva8", "iva16", "ieps",
+      "total_transferred_tax", "isr_withheld", "iva_withheld", "total_withheld",
+      "declared_total_transferred", "declared_total_withheld",
+      "line_items", "descriptions",
+      // manual:
+      "check_number", "bank_statement_month", "bank_statement_id",
+    ];
+
+    // Column widths (chars) for the few columns that benefit from it.
+    const COL_WIDTHS = {
+      uuid: 38, descriptions: 60, issuer_name: 30,
+    };
+    // Tax-detail columns auto-hidden in the output; data still present, just
+    // collapsed. Unhide in Excel/Sheets to audit. `total` is what's shown.
+    const HIDDEN = new Set([
+      "iva0", "iva8", "iva16", "ieps",
+      "total_transferred_tax",
+      "isr_withheld", "iva_withheld", "total_withheld",
+      "declared_total_transferred", "declared_total_withheld",
+    ]);
+
+    function rowsToWorkbook(rows) {
+      const data = rows.length
+        ? [HEADERS, ...rows.map((r) => HEADERS.map((h) => r[h] ?? ""))]
+        : [HEADERS];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws["!cols"] = HEADERS.map((h) => ({
+        wch: COL_WIDTHS[h] || 14,
+        hidden: HIDDEN.has(h),
+      }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Facturas");
+      return wb;
+    }
+
+    function datedFilename(rows) {
+      if (!rows.length) return "facturas.xlsx";
+      const dates = rows
+        .map((r) => r.date)
+        .filter(Boolean)
+        .sort();
+      if (!dates.length) return "facturas.xlsx";
+      const min = dates[0];
+      const max = dates[dates.length - 1];
+      return `facturas_${min}_${max}.xlsx`;
+    }
+
+    function downloadWorkbook(wb, filename) {
+      XLSX.writeFile(wb, filename);
+    }
+
+    /* ---------- orchestration ---------- */
+    async function convert(files) {
+      clearLog();
+      summaryEl.replaceChildren();
+      let kept = 0, skipped = 0, errors = 0, total = 0;
+      const rows = [];
+
+      // First pass: enumerate XML entries to size the progress bar.
+      const plans = [];
+      for (const f of files) {
+        try {
+          const { entries } = await readZip(f);
+          for (const ent of entries) plans.push({ file: f, ent });
+        } catch (e) {
+          log(`Failed to open ${f.name}: ${e.message}`, "err-line");
+          errors++;
+        }
+      }
+      total = plans.length;
+      if (!total) {
+        log("No .xml files found inside the selected ZIP(s).", "err-line");
+        renderSummary({ kept: 0, skipped: 0, errors, total: 0 });
+        return;
+      }
+
+      log(`Processing ${total} XML file(s) from ${files.length} ZIP(s)…`);
+      let done = 0;
+
+      for (const { file, ent } of plans) {
+        try {
+          const xmlText = await ent.async("string");
+          const res = parseCFDI(xmlText);
+          if (res.skip) {
+            skipped++;
+          } else {
+            rows.push(res.row);
+            kept++;
+          }
+        } catch (e) {
+          errors++;
+          log(`Error parsing "${ent.name}" in ${file.name}: ${e.message}`, "err-line");
+        }
+        done++;
+        setProgress(done, total, `Parsing ${done}/${total}`);
+      }
+
+      if (kept) {
+        rows.sort((a, b) => a.date.localeCompare(b.date));
+        const wb = rowsToWorkbook(rows);
+        const fname = datedFilename(rows);
+        downloadWorkbook(wb, fname);
+        log(`Saved ${fname} — ${kept} factura(s).`, "ok-line");
+      } else {
+        log("No income (I) CFDIs found to export.", "err-line");
+      }
+
+      renderSummary({ kept, skipped, errors, total });
+      setProgress(total, total, `Done — ${kept} kept, ${skipped} skipped, ${errors} errors`);
+    }
+
+    /* ---------- file selection ---------- */
+    let selectedFiles = []; // File[]
+
+    function renderFilelist() {
+      filelistEl.replaceChildren();
+      if (!selectedFiles.length) return;
+      selectedFiles.forEach((f, i) => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.innerHTML = `${f.name} <span class="rm" title="remove">×</span>`;
+        chip.querySelector(".rm").addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          selectedFiles.splice(i, 1);
+          syncInputFiles();
+          renderFilelist();
+          updateButtons();
+        });
+        filelistEl.appendChild(chip);
+      });
+    }
+
+    function syncInputFiles() {
+      const dt = new DataTransfer();
+      for (const f of selectedFiles) dt.items.add(f);
+      fileInput.files = dt.files;
+    }
+
+    function addFiles(fileObjs) {
+      for (const f of fileObjs) {
+        if (!selectedFiles.some((s) => s.name === f.name && s.size === f.size)) {
+          selectedFiles.push(f);
+        }
+      }
+      syncInputFiles();
+      renderFilelist();
+      updateButtons();
+    }
+
+    function updateButtons() {
+      const has = selectedFiles.length > 0;
+      convertBtn.disabled = !has;
+      clearBtn.disabled = !has;
+    }
+
+    function clearAll() {
+      selectedFiles = [];
+      fileInput.value = "";
+      renderFilelist();
+      updateButtons();
+      clearLog();
+      summaryEl.replaceChildren();
+      setProgress(0, 0, "Idle");
+    }
+
+    /* ---------- wiring ---------- */
+    fileInput.addEventListener("change", () => {
+      addFiles(Array.from(fileInput.files));
+    });
+    dropzone.addEventListener("click", (e) => {
+      // avoid double-trigger from interacting with chips
+      if (e.target.closest(".chip")) return;
+      fileInput.click();
+    });
+    ["dragenter", "dragover"].forEach((ev) =>
+      dropzone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add("drag");
+      })
+    );
+    ["dragleave", "dragend", "drop"].forEach((ev) =>
+      dropzone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove("drag");
+      })
+    );
+    dropzone.addEventListener("drop", (e) => {
+      const dt = e.dataTransfer;
+      if (!dt || !dt.files) return;
+      const zips = Array.from(dt.files).filter((f) => /\.zip$/i.test(f.name));
+      if (zips.length) addFiles(zips);
+    });
+
+    convertBtn.addEventListener("click", async () => {
+      if (!selectedFiles.length) return;
+      convertBtn.disabled = true;
+      clearBtn.disabled = true;
+      try {
+        await convert(selectedFiles.slice());
+      } catch (e) {
+        log("🔴 " + e.message, "err-line");
+        console.error(e);
+      } finally {
+        updateButtons();
+      }
+    });
+
+    clearBtn.addEventListener("click", clearAll);
+    updateButtons();
+  })();
+  </script>
+</body>
+</html>
