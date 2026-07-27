@@ -11,6 +11,7 @@ test("the canonical Markdown contains the migrated client hierarchy", async () =
   assert.equal(atlas.places.length, 42);
   assert.ok(atlas.regions.every((region) => region.names.en && region.names.el));
   assert.ok(atlas.places.every((place) => place.names.en && place.names.el));
+  assert.ok(atlas.places.every((place) => place.info === "Dance 1\n\nDance 2\n\netc"));
   assert.doesNotMatch(source, /^(?:id|has_dance|kind|min_zoom|priority|order)=/mu);
   assert.deepEqual(
     atlas.regions
