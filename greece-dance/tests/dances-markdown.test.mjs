@@ -12,6 +12,17 @@ test("the canonical Markdown contains the migrated client hierarchy", async () =
   assert.ok(atlas.regions.every((region) => region.names.en && region.names.el));
   assert.ok(atlas.places.every((place) => place.names.en && place.names.el));
   assert.doesNotMatch(source, /^(?:id|has_dance|kind|min_zoom|priority|order)=/mu);
+  assert.deepEqual(
+    atlas.regions
+      .filter((region) => region.name.startsWith("Macedonia,"))
+      .map((region) => region.names),
+    [
+      { en: "Macedonia, Eastern", el: "Μακεδονία, Ανατολική" },
+      { en: "Macedonia, Northern", el: "Μακεδονία, Βόρεια" },
+      { en: "Macedonia, Central", el: "Μακεδονία, Κεντρική" },
+      { en: "Macedonia, Western", el: "Μακεδονία, Δυτική" }
+    ]
+  );
 
   const thessaly = atlas.regions.find((region) => region.id === "thessaly");
   assert.equal(thessaly.names.el, "Θεσσαλία");

@@ -56,8 +56,8 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
 
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
-# Eastern Macedonia
-greek_name=Ανατολική Μακεδονία
+# Macedonia, Eastern
+greek_name=Μακεδονία, Ανατολική
 color=#3f77a6
 
 ## Serres
@@ -94,8 +94,8 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
 
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
-# Northern Macedonia
-greek_name=Βόρεια Μακεδονία
+# Macedonia, Northern
+greek_name=Μακεδονία, Βόρεια
 color=#e5a83f
 
 ## Aridaia
@@ -158,8 +158,8 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
 
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
-# Central Macedonia
-greek_name=Κεντρική Μακεδονία
+# Macedonia, Central
+greek_name=Μακεδονία, Κεντρική
 color=#6f8f4d
 
 ## Goumenissa
@@ -192,8 +192,8 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor i
 
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
-# Western Macedonia
-greek_name=Δυτική Μακεδονία
+# Macedonia, Western
+greek_name=Μακεδονία, Δυτική
 color=#7c6aaa
 
 ## Florina
