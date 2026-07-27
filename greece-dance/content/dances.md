@@ -306,7 +306,7 @@ Dance 2
 
 etc
 
-# Peloponenisos
+# Peloponnisos
 greek_name=Πελοπόννησος
 color=#9b7554
 

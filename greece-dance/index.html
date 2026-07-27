@@ -1,16 +1,16 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0D5EAF" />
-    <meta name="description" content="An exploratory atlas of village dance traditions across Greece and Asia Minor." />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D5EAF">
+    <meta name="description" content="An exploratory atlas of village dance traditions across Greece and Asia Minor.">
     <title>Title here</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Gloock&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=20260727-2" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Gloock&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/maplibre-gl.css">
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <a class="skip-link" href="#archive-panel">Skip to archive</a>
@@ -18,7 +18,7 @@
       <header class="site-header">
         <div class="brand">
           <span class="brand-mark">logo here</span>
-          <span class="brand-name">Title here</span>
+          <h1 class="brand-name">Title here</h1>
         </div>
       </header>
 
@@ -27,7 +27,7 @@
           <div id="map"></div>
           <div class="map-wash" aria-hidden="true"></div>
 
-          <div class="language-control" aria-label="Map controls">
+          <div class="language-control" role="group" aria-label="Map controls">
             <button class="home-button" id="home-button" type="button">Home</button>
             <div class="language-options" id="language-options">
               <button class="language-button is-active" type="button" data-language="en" aria-pressed="true">English</button>
@@ -36,18 +36,18 @@
           </div>
 
           <nav class="region-tray" aria-label="Browse regions">
-            <div class="region-list" id="region-list" role="list"></div>
+            <div class="region-list" id="region-list"></div>
           </nav>
 
-          <button class="mobile-archive-button" id="mobile-archive-button" type="button">
+          <button class="mobile-archive-button" id="mobile-archive-button" type="button" aria-controls="archive-panel" aria-expanded="false">
             Open archive <span id="mobile-count">00</span>
           </button>
         </section>
 
-        <aside class="archive-panel" id="archive-panel" aria-label="Village archive">
+        <aside class="archive-panel" id="archive-panel" aria-label="Village archive" tabindex="-1">
           <div class="panel-header">
             <div>
-              <h2 id="panel-title" hidden></h2>
+              <h2 id="panel-title" hidden>Village archive</h2>
             </div>
             <button class="panel-close" id="panel-close" type="button" aria-label="Close archive">×</button>
           </div>
@@ -55,21 +55,21 @@
           <div class="search-wrap">
             <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg>
             <label class="sr-only" for="village-search">Search villages</label>
-            <input id="village-search" type="search" placeholder="Search villages or dances" autocomplete="off" />
+            <input id="village-search" type="search" placeholder="Search villages or dances" autocomplete="off">
           </div>
 
           <div class="panel-scroll">
             <div id="village-list" class="archive-tree" aria-live="polite">
               <p class="loading-state">Reading content/dances.md…</p>
             </div>
-            <article id="village-detail" class="village-detail" hidden></article>
+            <div id="village-detail" class="village-detail" hidden></div>
           </div>
         </aside>
       </main>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="vendor/marked.umd.js"></script>
-    <script type="module" src="app.js?v=20260727-4"></script>
+    <script src="vendor/purify.min.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

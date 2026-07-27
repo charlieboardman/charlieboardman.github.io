@@ -4,14 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-map.mjs",
-    "build:map": "node scripts/build-map.mjs",
-    "fetch:map-data": "node scripts/fetch-map-data.mjs",
     "dev": "python3 -m http.server 8000",
     "test": "node --test"
   },
-  "dependencies": {
-    "sharp": "^0.35.3"
-  },
-  "description": "A no-build static Dance Atlas and its optional map-tile builder"
+  "description": "A no-build static Dance Atlas with live OpenStreetMap vector tiles"
 }

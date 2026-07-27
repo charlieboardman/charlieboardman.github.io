@@ -3,38 +3,22 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { DancesMarkdownError, parseDancesMarkdown, stripComments } from "../dances-markdown.js";
 
-test("the canonical Markdown contains the migrated client hierarchy", async () => {
+test("the canonical Markdown remains valid as its content changes", async () => {
   const source = await readFile(new URL("../content/dances.md", import.meta.url), "utf8");
   const atlas = parseDancesMarkdown(source);
 
-  assert.equal(atlas.regions.length, 24);
-  assert.equal(atlas.places.length, 42);
+  const hierarchyPlaces = atlas.regions.flatMap((region) => [
+    ...region.villages,
+    ...region.subregions.flatMap((subregion) => subregion.villages)
+  ]);
+
+  assert.ok(atlas.regions.length > 0);
+  assert.equal(atlas.places.length, hierarchyPlaces.length);
   assert.ok(atlas.regions.every((region) => region.names.en && region.names.el));
   assert.ok(atlas.places.every((place) => place.names.en && place.names.el));
-  assert.ok(atlas.places.every((place) => place.info === "Dance 1\n\nDance 2\n\netc"));
+  assert.equal(new Set(atlas.regions.map((region) => region.id)).size, atlas.regions.length);
+  assert.equal(new Set(atlas.places.map((place) => place.id)).size, atlas.places.length);
   assert.doesNotMatch(source, /^(?:id|has_dance|kind|min_zoom|priority|order)=/mu);
-  assert.deepEqual(
-    atlas.regions
-      .filter((region) => region.name.startsWith("Macedonia,"))
-      .map((region) => region.names),
-    [
-      { en: "Macedonia, Eastern", el: "Μακεδονία, Ανατολική" },
-      { en: "Macedonia, Northern", el: "Μακεδονία, Βόρεια" },
-      { en: "Macedonia, Central", el: "Μακεδονία, Κεντρική" },
-      { en: "Macedonia, Western", el: "Μακεδονία, Δυτική" }
-    ]
-  );
-
-  const thessaly = atlas.regions.find((region) => region.id === "thessaly");
-  assert.equal(thessaly.names.el, "Θεσσαλία");
-  assert.deepEqual(thessaly.villages.map((village) => village.name), ["Sofades"]);
-  assert.deepEqual(thessaly.subregions.map((subregion) => subregion.names), [
-    { en: "Agrafa", el: "Άγραφα" }
-  ]);
-  assert.deepEqual(
-    thessaly.subregions[0].villages.map((village) => village.name),
-    ["Argithea", "Krioneri", "Thrapsimi"]
-  );
 });
 
 test("HTML comments apply globally and can span multiple lines", () => {
@@ -78,6 +62,33 @@ test("unclosed HTML comments identify their starting line", () => {
       return true;
     }
   );
+});
+
+test("Markdown headings inside fenced info code remain content", () => {
+  const atlas = parseDancesMarkdown(`
+# Test Region
+greek_name=Περιοχή
+color=#336699
+
+## Test Village
+greek_name=Χωριό
+latitude=40
+longitude=22
+
+### info
+\`\`\`md
+# This is not a region
+## This is not a village
+### info
+\`\`\`
+
+After the code.
+  `);
+
+  assert.equal(atlas.regions.length, 1);
+  assert.equal(atlas.places.length, 1);
+  assert.match(atlas.places[0].info, /^```md\n# This is not a region/mu);
+  assert.match(atlas.places[0].info, /After the code\.$/u);
 });
 
 test("subregion fields must be paired and consistently translated", () => {

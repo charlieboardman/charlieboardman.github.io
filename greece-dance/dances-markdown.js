@@ -33,6 +33,7 @@ export function parseDancesMarkdown(source) {
   let currentRegion = null;
   let currentVillage = null;
   let inInfo = false;
+  let infoFence = null;
 
   const finishVillage = () => {
     if (!currentVillage) return;
@@ -106,6 +107,7 @@ export function parseDancesMarkdown(source) {
     });
     currentVillage = null;
     inInfo = false;
+    infoFence = null;
   };
 
   const finishRegion = () => {
@@ -129,6 +131,30 @@ export function parseDancesMarkdown(source) {
   lines.forEach((rawLine, index) => {
     const lineNumber = index + 1;
     const line = rawLine;
+    if (inInfo) {
+      if (infoFence) {
+        currentVillage.infoLines.push(line);
+        const closingFence = /^\s{0,3}(`{3,}|~{3,})\s*$/u.exec(line);
+        if (
+          closingFence
+          && closingFence[1][0] === infoFence.character
+          && closingFence[1].length >= infoFence.length
+        ) {
+          infoFence = null;
+        }
+        return;
+      }
+
+      const openingFence = /^\s{0,3}(`{3,}|~{3,})(.*)$/u.exec(line);
+      if (openingFence) {
+        infoFence = {
+          character: openingFence[1][0],
+          length: openingFence[1].length
+        };
+        currentVillage.infoLines.push(line);
+        return;
+      }
+    }
     const heading = /^(#{1,6})\s+(.+?)\s*$/u.exec(line);
 
     if (heading?.[1] === "#") {

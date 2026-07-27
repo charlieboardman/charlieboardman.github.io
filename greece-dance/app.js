@@ -1,13 +1,23 @@
 import { DancesMarkdownError, parseDancesMarkdown } from "./dances-markdown.js";
 import { localizedName, sortRegionsAlphabetically } from "./region-presentation.js";
+import {
+  AttributionControl,
+  LngLatBounds,
+  Map as MapLibreMap,
+  Marker,
+  NavigationControl,
+  setWorkerUrl
+} from "./vendor/maplibre-gl.mjs";
+
+setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
 (async () => {
   let regions = [];
   let contentError = null;
   try {
     if (!window.marked?.parse) throw new Error("The bundled Markdown reader could not be loaded.");
+    if (!window.DOMPurify?.sanitize) throw new Error("The bundled HTML sanitizer could not be loaded.");
     const dancesUrl = new URL("./content/dances.md", import.meta.url);
-    dancesUrl.searchParams.set("loaded", Date.now().toString());
     const response = await fetch(dancesUrl, { cache: "no-store" });
     if (!response.ok) throw new Error(`Could not load content/dances.md (HTTP ${response.status}).`);
     regions = sortRegionsAlphabetically(parseDancesMarkdown(await response.text()).regions);
@@ -22,10 +32,12 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
     markdownRenderer.image = ({ text }) => escapeHtml(text);
   }
 
-  const renderMarkdown = (source) => window.marked.parse(source, {
-    async: false,
-    renderer: markdownRenderer
-  });
+  const renderMarkdown = (source) => window.DOMPurify.sanitize(
+    window.marked.parse(source, {
+      async: false,
+      renderer: markdownRenderer
+    })
+  );
 
   const villages = regions.flatMap((region) => [
     ...(region.villages || []).map((village) => ({
@@ -63,30 +75,105 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
     mobileArchive: document.querySelector("#mobile-archive-button"),
     panelClose: document.querySelector("#panel-close"),
     homeButton: document.querySelector("#home-button"),
-    languageOptions: document.querySelector("#language-options")
+    languageOptions: document.querySelector("#language-options"),
+    skipLink: document.querySelector(".skip-link")
   };
 
   document.querySelector("#mobile-count").textContent = String(villages.length).padStart(2, "0");
 
   const mapDataBounds = { south: 34, west: 18, north: 43.5, east: 34.5 };
-  const minNativeZoom = 5;
-  const maxNativeZoom = 9;
+  const minMapZoom = 5;
   const maxMapZoom = 11;
   const minimumMarkerDiameter = 9;
   const maximumMarkerDiameter = 18;
-  const map = L.map("map", {
-    center: [39.25, 26.1],
+  const map = new MapLibreMap({
+    container: "map",
+    center: [26.1, 39.25],
     zoom: 6,
-    zoomSnap: 0.1,
-    minZoom: minNativeZoom,
+    minZoom: minMapZoom,
     maxZoom: maxMapZoom,
-    zoomControl: false,
-    attributionControl: true
+    attributionControl: false,
+    renderWorldCopies: false,
+    dragRotate: false,
+    pitchWithRotate: false,
+    style: {
+      version: 8,
+      sources: {
+        shortbread: {
+          type: "vector",
+          tiles: ["https://vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt"],
+          minzoom: 0,
+          maxzoom: 14,
+          bounds: [mapDataBounds.west, mapDataBounds.south, mapDataBounds.east, mapDataBounds.north],
+          attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a>'
+        }
+      },
+      layers: [
+        {
+          id: "land-background",
+          type: "background",
+          paint: { "background-color": "#edf2ec" }
+        },
+        {
+          id: "ocean",
+          type: "fill",
+          source: "shortbread",
+          "source-layer": "ocean",
+          paint: { "fill-color": "#cfd9d5" }
+        },
+        {
+          id: "inland-water",
+          type: "fill",
+          source: "shortbread",
+          "source-layer": "water_polygons",
+          paint: {
+            "fill-color": "#cfd9d5",
+            "fill-outline-color": "#c3d0ca"
+          }
+        },
+        {
+          id: "internal-boundaries",
+          type: "line",
+          source: "shortbread",
+          "source-layer": "boundaries",
+          filter: [
+            "all",
+            [">", ["to-number", ["get", "admin_level"]], 2],
+            ["!=", ["get", "maritime"], true]
+          ],
+          paint: {
+            "line-color": "#d0d9d2",
+            "line-width": 0.7
+          }
+        },
+        {
+          id: "country-boundaries",
+          type: "line",
+          source: "shortbread",
+          "source-layer": "boundaries",
+          filter: [
+            "all",
+            ["<=", ["to-number", ["get", "admin_level"]], 2],
+            ["!=", ["get", "maritime"], true]
+          ],
+          paint: {
+            "line-color": "#b7c5bd",
+            "line-width": 1
+          }
+        }
+      ]
+    }
   });
   let initialMapView = {
-    center: [map.getCenter().lat, map.getCenter().lng],
+    center: map.getCenter().toArray(),
     zoom: map.getZoom()
   };
+  map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
+  map.addControl(new AttributionControl({
+    compact: false,
+    customAttribution: "Village data dances.md"
+  }), "bottom-right");
+  map.on("error", (event) => console.error("Basemap error:", event.error));
 
   const supportedLanguages = ["en", "el"];
   let mapLanguage = "en";
@@ -94,25 +181,6 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
     const savedLanguage = localStorage.getItem("dance-atlas-language");
     if (supportedLanguages.includes(savedLanguage)) mapLanguage = savedLanguage;
   } catch {}
-
-  const basemap = L.tileLayer("assets/map/{z}/{x}/{y}.webp", {
-    minNativeZoom,
-    maxNativeZoom,
-    maxZoom: maxMapZoom,
-    noWrap: true,
-    bounds: [[mapDataBounds.south, mapDataBounds.west], [mapDataBounds.north, mapDataBounds.east]],
-    attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Village data dances.md'
-  }).addTo(map);
-  L.control.zoom({ position: "bottomright" }).addTo(map);
-
-  function tileCoverageCenterLongitude(zoom) {
-    const scale = 2 ** zoom;
-    const longitudeToTile = (longitude) => ((longitude + 180) / 360) * scale;
-    const tileToLongitude = (x) => (x / scale) * 360 - 180;
-    const minX = Math.floor(longitudeToTile(mapDataBounds.west));
-    const maxX = Math.floor(longitudeToTile(mapDataBounds.east - 1e-8));
-    return (tileToLongitude(minX) + tileToLongitude(maxX + 1)) / 2;
-  }
 
   function setMapLanguage(language) {
     if (!supportedLanguages.includes(language)) return;
@@ -177,7 +245,7 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
   let hasRenderedAtlas = false;
 
   function markerDiameterAtZoom(zoom) {
-    const progress = Math.max(0, Math.min(1, (zoom - minNativeZoom) / (maxMapZoom - minNativeZoom)));
+    const progress = Math.max(0, Math.min(1, (zoom - minMapZoom) / (maxMapZoom - minMapZoom)));
     return minimumMarkerDiameter + (maximumMarkerDiameter - minimumMarkerDiameter) * progress;
   }
 
@@ -250,23 +318,35 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
   const initialMarkerScale = initialMarkerDiameter / maximumMarkerDiameter;
   villages.forEach((village) => {
     const label = villageLabel(village);
-    const icon = L.divIcon({
-      className: "village-icon",
-      html: `
-        <div class="village-marker-shell">
-          <div class="village-marker-scale" style="--marker-scale:${initialMarkerScale.toFixed(4)}">
-            <div class="village-marker" data-village="${escapeAttribute(village.id)}" style="--marker-color:${escapeAttribute(village.regionColor)}"></div>
-          </div>
-          <span class="village-map-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
-        </div>
-      `,
-      iconSize: [maximumMarkerDiameter, maximumMarkerDiameter],
-      iconAnchor: [maximumMarkerDiameter / 2, maximumMarkerDiameter / 2]
-    });
-    const marker = L.marker(village.coordinates, { icon, title: label, alt: label, keyboard: true }).addTo(map);
-    marker.on("click", () => selectVillage(village.id));
-    marker.on("mouseover", () => setMarkerState(village.id, true));
-    marker.on("mouseout", () => setMarkerState(village.id, activeVillage === village.id));
+    const markerElement = document.createElement("button");
+    markerElement.type = "button";
+    markerElement.className = "village-icon";
+    markerElement.title = label;
+    markerElement.setAttribute("aria-label", label);
+
+    const shell = document.createElement("span");
+    shell.className = "village-marker-shell";
+    const scale = document.createElement("span");
+    scale.className = "village-marker-scale";
+    scale.style.setProperty("--marker-scale", initialMarkerScale.toFixed(4));
+    const dot = document.createElement("span");
+    dot.className = "village-marker";
+    dot.dataset.village = village.id;
+    dot.style.setProperty("--marker-color", village.regionColor);
+    const labelElement = document.createElement("span");
+    labelElement.className = "village-map-label";
+    labelElement.lang = mapLanguage;
+    labelElement.textContent = label;
+    scale.append(dot);
+    shell.append(scale, labelElement);
+    markerElement.append(shell);
+
+    const marker = new Marker({ element: markerElement, anchor: "center" })
+      .setLngLat(villageLngLat(village))
+      .addTo(map);
+    markerElement.addEventListener("click", () => selectVillage(village.id));
+    markerElement.addEventListener("mouseenter", () => setMarkerState(village.id, true));
+    markerElement.addEventListener("mouseleave", () => setMarkerState(village.id, activeVillage === village.id));
     markerById.set(village.id, marker);
   });
   setMapLanguage(mapLanguage);
@@ -278,36 +358,29 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
   function fitInitialMapView() {
     if (hasFitInitialMapView || !villages.length) return;
     hasFitInitialMapView = true;
-    const villageBounds = L.latLngBounds(villages.map((village) => village.coordinates));
+    const villageBounds = villages.reduce(
+      (bounds, village) => bounds.extend(villageLngLat(village)),
+      new LngLatBounds()
+    );
     const horizontalPadding = window.matchMedia("(max-width: 720px)").matches ? 24 : 48;
     map.fitBounds(villageBounds, {
-      paddingTopLeft: [horizontalPadding, 20],
-      paddingBottomRight: [horizontalPadding, Math.ceil(els.regionTray.getBoundingClientRect().height) + 12],
-      animate: false
+      padding: {
+        top: 20,
+        right: horizontalPadding,
+        bottom: Math.ceil(els.regionTray.getBoundingClientRect().height) + 12,
+        left: horizontalPadding
+      },
+      duration: 0,
+      retainPadding: false
     });
-    const tileZoom = Math.max(minNativeZoom, Math.min(maxNativeZoom, Math.round(map.getZoom())));
-    const fittedCenter = map.getCenter();
-    const fittedZoom = map.getZoom();
-    const villagePoints = villages.map((village) => map.project(village.coordinates, fittedZoom));
-    const viewportWidth = map.getSize().x;
-    const minimumCenterX = Math.max(...villagePoints.map((point) => point.x)) - (viewportWidth / 2) + horizontalPadding;
-    const maximumCenterX = Math.min(...villagePoints.map((point) => point.x)) + (viewportWidth / 2) - horizontalPadding;
-    const coverageCenter = map.project(
-      [fittedCenter.lat, tileCoverageCenterLongitude(tileZoom)],
-      fittedZoom
-    );
-    coverageCenter.x = Math.max(minimumCenterX, Math.min(maximumCenterX, coverageCenter.x));
-    const centeredView = map.unproject(coverageCenter, fittedZoom);
-    map.setView(
-      centeredView,
-      fittedZoom,
-      { animate: false }
-    );
-    const initialCenter = map.getCenter();
     initialMapView = {
-      center: [initialCenter.lat, initialCenter.lng],
+      center: map.getCenter().toArray(),
       zoom: map.getZoom()
     };
+  }
+
+  function villageLngLat(village) {
+    return [village.coordinates[1], village.coordinates[0]];
   }
 
   function renderRegions() {
@@ -315,7 +388,7 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
       ${regions.map((region) => {
         const isActive = activeRegion === region.id;
         const label = regionLabel(region);
-        return `<button class="region-chip${isActive ? " is-active" : ""}" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(label)}" aria-pressed="${isActive}"><span class="region-chip-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span></button>`;
+        return `<button class="region-chip${isActive ? " is-active" : ""}" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" title="${escapeAttribute(label)}" aria-pressed="${isActive}"><span class="region-chip-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span></button>`;
       }).join("")}
     `;
     els.regionList.querySelectorAll(".region-chip").forEach((button) => {
@@ -341,7 +414,7 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
       </section>
     `;
     document.querySelector("#mobile-count").textContent = "!";
-    els.archive.classList.add("is-open");
+    setArchiveOpen(true);
   }
 
   function renderVillages(query = "") {
@@ -480,7 +553,7 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
 
   function goHome() {
     selectRegion(null);
-    map.setView(initialMapView.center, initialMapView.zoom, { animate: false });
+    map.jumpTo(initialMapView);
   }
 
   function previewRegion(id) {
@@ -499,7 +572,11 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
     els.villageList.hidden = true;
     els.villageDetail.hidden = false;
     els.panelTitle.hidden = true;
-    els.archive.classList.add("is-detail", "is-open");
+    els.archive.classList.add("is-detail");
+    setArchiveOpen(true);
+    if (mobileArchiveMedia.matches) {
+      requestAnimationFrame(() => els.villageDetail.querySelector(".detail-back")?.focus());
+    }
   }
 
   function setMarkerState(id, enabled) {
@@ -535,12 +612,47 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
     renderVillages(els.search.value);
   }
 
+  const mobileArchiveMedia = window.matchMedia("(max-width: 720px)");
+
+  function syncArchiveAccessibility() {
+    const isMobile = mobileArchiveMedia.matches;
+    const isOpen = isMobile && els.archive.classList.contains("is-open");
+    els.mobileArchive.setAttribute("aria-expanded", String(isOpen));
+    els.archive.inert = isMobile && !isOpen;
+    if (isMobile) els.archive.setAttribute("aria-hidden", String(!isOpen));
+    else els.archive.removeAttribute("aria-hidden");
+  }
+
+  function setArchiveOpen(open, { focusSearch = false, restoreFocus = false } = {}) {
+    if (mobileArchiveMedia.matches) els.archive.classList.toggle("is-open", open);
+    syncArchiveAccessibility();
+    if (open && focusSearch) requestAnimationFrame(() => els.search.focus());
+    if (!open && restoreFocus) els.mobileArchive.focus();
+  }
+
+  function handleArchiveBreakpointChange() {
+    if (!mobileArchiveMedia.matches) els.archive.classList.remove("is-open");
+    syncArchiveAccessibility();
+  }
+
   els.search.addEventListener("input", showList);
   els.homeButton.addEventListener("click", goHome);
-  els.mobileArchive.addEventListener("click", () => els.archive.classList.add("is-open"));
-  els.panelClose.addEventListener("click", () => els.archive.classList.remove("is-open"));
+  els.mobileArchive.addEventListener("click", () => setArchiveOpen(true, { focusSearch: true }));
+  els.panelClose.addEventListener("click", () => setArchiveOpen(false, { restoreFocus: true }));
+  els.skipLink.addEventListener("click", (event) => {
+    event.preventDefault();
+    setArchiveOpen(true, { focusSearch: true });
+  });
+  mobileArchiveMedia.addEventListener("change", handleArchiveBreakpointChange);
+  syncArchiveAccessibility();
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") els.archive.classList.remove("is-open");
+    if (
+      event.key === "Escape"
+      && mobileArchiveMedia.matches
+      && els.archive.classList.contains("is-open")
+    ) {
+      setArchiveOpen(false, { restoreFocus: true });
+    }
   });
 
   if (contentError) showContentError(contentError);
@@ -549,8 +661,12 @@ import { localizedName, sortRegionsAlphabetically } from "./region-presentation.
     renderVillages();
     hasRenderedAtlas = true;
   }
-  Promise.resolve(document.fonts?.ready).then(() => requestAnimationFrame(() => {
-    map.invalidateSize({ pan: false });
+  const mapReady = new Promise((resolve) => {
+    if (map.loaded()) resolve();
+    else map.once("load", resolve);
+  });
+  Promise.all([Promise.resolve(document.fonts?.ready), mapReady]).then(() => requestAnimationFrame(() => {
+    map.resize();
     fitInitialMapView();
     scheduleMapLabelLayout();
   }));

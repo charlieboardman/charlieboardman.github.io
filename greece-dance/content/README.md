@@ -57,7 +57,8 @@ region.
 
 The optional `### info` section continues until the next village or region. Its
 body is Markdown and may contain paragraphs, links, lists, emphasis and
-level-four-or-deeper headings.
+level-four-or-deeper headings. Headings at any level inside fenced code blocks
+are treated as literal code rather than region or village records.
 
 ## Comments
 

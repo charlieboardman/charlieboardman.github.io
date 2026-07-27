@@ -1,62 +1,51 @@
 # Dance Atlas
 
-Dance Atlas is a completely static website plus an optional map-tile workshop,
-all in this one directory.
+Dance Atlas is a completely static website. The repository contains the whole
+application and requires no build or deployment service.
 
 - [`content/dances.md`](content/dances.md) is the canonical content source.
 - The browser reads and validates that file directly on every page load. Content
   changes need no build step and no GitHub Action.
 - The browser renders localized village labels from the Markdown as an
   interactive map overlay.
-- [`assets/map/`](assets/map/) contains the prebuilt, geometry-only map tiles
-  served by the static site.
+- The map reads OpenStreetMap Shortbread vector tiles at runtime and renders
+  only land, water and administrative boundaries. It deliberately omits
+  provider place labels so the atlas labels remain prominent.
 
 The published app is:
 <https://charlieboardman.github.io/greece-dance/>
 
 ## Editing content
 
-Edit `content/dances.md`, commit it and refresh the site. Regions and villages
-use English Markdown headings plus Greek names and other fields beneath them.
-The complete format and editing guide are in
-[`content/README.md`](content/README.md).
+Edit [`content/dances.md` on GitHub](https://github.com/charlieboardman/charlieboardman.github.io/edit/main/greece-dance/content/dances.md),
+commit it and refresh the site. Regions and villages use English Markdown
+headings plus Greek names and other fields beneath them. The complete format
+and editing guide are in [`content/README.md`](content/README.md).
 
 ## Previewing locally
 
-Requirements: Node.js 20 or newer and npm.
+Requirements: Python 3 for the local web server, plus Node.js 20 or newer and
+npm for the test command and npm shortcuts.
 
 ```bash
-npm install
 npm run dev
 ```
 
 Then open <http://localhost:8000/>. A local web server is required because
 browsers do not allow the page to `fetch()` its content from a `file:` URL.
 
-## Rebuilding the map
+## Testing
 
-This is only necessary after changing the map geometry source or rendering
-style. Content edits never require a tile rebuild.
-
-```bash
-npm install
-npm run fetch:map-data
-npm run build
-```
-
-`fetch:map-data` downloads Natural Earth country, province and lake geometry
-into the ignored `map-source/data/` cache. Existing files are reused. `npm run
-build` replaces `assets/map/` with geometry-only tiles. Review the changes, then
-commit and push this repository normally.
-
-To deliberately refresh the Natural Earth downloads:
+The tests validate the content grammar and presentation helpers without
+freezing the current number of regions or villages:
 
 ```bash
-npm run fetch:map-data -- --force
+npm test
 ```
 
 There is no GitHub Action or deployment build. GitHub Pages serves the committed
-HTML, JavaScript, Markdown and tiles exactly as they are.
+HTML, JavaScript and Markdown exactly as they are. Map geography updates from
+OpenStreetMap at runtime.
 
 ## Project structure
 
@@ -67,13 +56,11 @@ dances-markdown.js          dances.md validation and hierarchy parser
 region-presentation.js      Localized names and region sorting
 content/dances.md           Canonical content source
 content/README.md           Markdown editing guide
-assets/map/                 Committed prebuilt map tiles
-map-source/data/            Ignored Natural Earth download cache
-scripts/fetch-map-data.mjs  Geometry downloader
-scripts/build-map.mjs       Geometry-only map renderer
 tests/                      Content/parser tests
-vendor/                     Browser copy of Marked
+vendor/                     Browser libraries and their licenses
 ```
 
-Natural Earth geometry is public domain. Marked renders village information
-sections; its license is included in `vendor/`.
+OpenStreetMap supplies the live vector tiles and is credited in the map.
+MapLibre renders the basemap, Marked renders village information sections, and
+DOMPurify sanitizes the resulting HTML. Their licenses are included in
+`vendor/`.
