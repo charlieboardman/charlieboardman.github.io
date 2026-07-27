@@ -188,17 +188,23 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
       const element = marker.getElement();
       const label = element?.querySelector(".village-map-label");
       const dot = element?.querySelector(".village-marker");
-      return label && dot ? [{ label: label.getBoundingClientRect(), dot: dot.getBoundingClientRect() }] : [];
+      return label && dot ? [{
+        element: label,
+        label: label.getBoundingClientRect(),
+        dot: dot.getBoundingClientRect()
+      }] : [];
     });
     const padding = 2;
-    const collisionFree = items.every((item, index) =>
-      items.slice(index + 1).every((other) =>
-        !rectanglesOverlap(item.label, other.label, padding)
-        && !rectanglesOverlap(item.label, other.dot, padding)
-        && !rectanglesOverlap(other.label, item.dot, padding)
-      )
-    );
-    map.getContainer().classList.toggle("are-village-labels-collision-free", collisionFree);
+    items.forEach((item, index) => {
+      const collisionFree = items.every((other, otherIndex) =>
+        index === otherIndex
+        || (
+          !rectanglesOverlap(item.label, other.label, padding)
+          && !rectanglesOverlap(item.label, other.dot, padding)
+        )
+      );
+      item.element.classList.toggle("is-collision-free", collisionFree);
+    });
   }
 
   function rectanglesOverlap(first, second, padding = 0) {

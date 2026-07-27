@@ -76,7 +76,7 @@ button { color: inherit; }
 .village-marker:hover::after, .village-marker.is-active::after { opacity: .65; transform: scale(1); }
 .village-marker.is-muted { opacity: .16; transform: scale(.74); }
 .village-map-label { position: absolute; z-index: 1; left: 50%; top: 22px; width: max-content; transform: translateX(-50%); color: #75847f; font: 500 14px/1 "DM Sans", sans-serif; text-align: center; white-space: nowrap; opacity: 0; pointer-events: none; paint-order: stroke fill; -webkit-text-stroke: 2.6px #edf2ec; text-shadow: 0 0 1px #edf2ec; transition: opacity .12s ease; }
-.are-village-labels-collision-free .village-map-label,
+.village-map-label.is-collision-free,
 .village-icon:hover .village-map-label,
 .village-icon:focus .village-map-label,
 .village-icon:focus-visible .village-map-label { opacity: 1; }
