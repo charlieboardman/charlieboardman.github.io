@@ -95,8 +95,8 @@ button { color: inherit; }
 .tree-region { border-bottom: 1px solid var(--line); }
 .tree-summary { display: grid; align-items: center; width: 100%; list-style: none; cursor: pointer; user-select: none; }
 .tree-summary::-webkit-details-marker { display: none; }
-.tree-region-summary { grid-template-columns: 16px 9px minmax(0, 1fr) 28px; gap: 10px; min-height: 52px; padding: 12px 3px 12px 0; font-size: 12px; font-weight: 600; }
-.tree-subregion-summary { grid-template-columns: 16px minmax(0, 1fr) 28px; gap: 8px; min-height: 43px; padding: 9px 3px 9px 18px; border-top: 1px solid rgba(23,39,37,.1); color: #44534f; font-size: 11px; font-weight: 600; }
+.tree-region-summary { grid-template-columns: 16px 9px minmax(0, 1fr) 28px; gap: 10px; min-height: 52px; padding: 12px 3px 12px 0; font: 500 18px/1 "Roboto Condensed", "DM Sans", sans-serif; }
+.tree-subregion-summary { grid-template-columns: 16px minmax(0, 1fr) 28px; gap: 8px; min-height: 43px; padding: 9px 3px 9px 18px; border-top: 1px solid rgba(23,39,37,.1); color: #44534f; font: 500 18px/1 "Roboto Condensed", "DM Sans", sans-serif; }
 .tree-summary:hover { background: rgba(255,255,255,.32); }
 .tree-summary:focus-visible { outline: 2px solid var(--coral); outline-offset: -2px; }
 .tree-chevron { color: #71807a; font-size: 18px; font-weight: 400; line-height: 1; transform-origin: center; transition: transform .16s ease; }
@@ -113,7 +113,7 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 .tree-village::before { content: ""; position: absolute; left: -19px; top: 7px; bottom: 7px; width: 2px; background: var(--region-color); opacity: 0; transition: opacity .16s ease; }
 .tree-village:hover::before, .tree-village.is-active::before { opacity: 1; }
 .tree-village-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--region-color); }
-.village-name { min-width: 0; font: 400 16px/1.1 "Gloock", serif; overflow-wrap: anywhere; }
+.village-name { min-width: 0; font: 500 18px/1 "Roboto Condensed", "DM Sans", sans-serif; overflow-wrap: anywhere; }
 .village-arrow { color: #7a8782; font-size: 15px; transition: transform .2s ease; }
 .tree-village:hover .village-arrow { transform: translateX(3px); color: var(--ink); }
 .tree-empty { margin: 0; padding: 12px 0 14px 34px; color: #7a8782; font-size: 10px; }
