@@ -128,12 +128,19 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
       const label = villageLabel(village);
       const element = marker.getElement();
       const labelElement = element?.querySelector(".village-map-label");
-      if (labelElement) labelElement.textContent = label;
+      if (labelElement) {
+        labelElement.textContent = label;
+        labelElement.lang = language;
+      }
       if (element) {
         element.title = label;
         element.setAttribute("aria-label", label);
       }
     });
+    if (hasRenderedAtlas) {
+      if (activeVillage) renderDetail(villageById.get(activeVillage));
+      else renderVillages(els.search.value);
+    }
     scheduleMapLabelLayout();
     try { localStorage.setItem("dance-atlas-language", language); } catch {}
   }
@@ -167,6 +174,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
   const expandedSubregions = new Set();
   let activeRegion = null;
   let activeVillage = null;
+  let hasRenderedAtlas = false;
 
   function markerDiameterAtZoom(zoom) {
     const progress = Math.max(0, Math.min(1, (zoom - minNativeZoom) / (maxMapZoom - minNativeZoom)));
@@ -241,7 +249,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
           <div class="village-marker-scale" style="--marker-scale:${initialMarkerScale.toFixed(4)}">
             <div class="village-marker" data-village="${escapeAttribute(village.id)}" style="--marker-color:${escapeAttribute(village.regionColor)}"></div>
           </div>
-          <span class="village-map-label">${escapeHtml(label)}</span>
+          <span class="village-map-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
         </div>
       `,
       iconSize: [maximumMarkerDiameter, maximumMarkerDiameter],
@@ -368,7 +376,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
 
   function villageMatches(village, query) {
     if (!query) return true;
-    return [village.name, village.regionName, village.subregionName, village.info]
+    return [...Object.values(village.names), village.regionName, village.subregionName, village.info]
       .filter(Boolean)
       .join(" ")
       .toLowerCase()
@@ -415,7 +423,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
     return `
       <button class="tree-village ${activeVillage === village.id ? "is-active" : ""}" data-village="${escapeAttribute(village.id)}">
         <span class="tree-village-dot" aria-hidden="true"></span>
-        <span class="village-name">${escapeHtml(village.name)}</span>
+        <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(villageLabel(village))}</span>
         <span class="village-arrow" aria-hidden="true">→</span>
       </button>
     `;
@@ -430,7 +438,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
   function renderDetail(village) {
     els.villageDetail.innerHTML = `
       <button class="detail-back" type="button">← Back to village index</button>
-      <h3>${escapeHtml(village.name)}</h3>
+      <h3 lang="${escapeAttribute(mapLanguage)}">${escapeHtml(villageLabel(village))}</h3>
       <div class="detail-copy">${village.infoHtml}</div>
     `;
     els.villageDetail.querySelector(".detail-back").addEventListener("click", showList);
@@ -517,6 +525,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
   else {
     renderRegions();
     renderVillages();
+    hasRenderedAtlas = true;
   }
   Promise.resolve(document.fonts?.ready).then(() => requestAnimationFrame(() => {
     map.invalidateSize({ pan: false });
