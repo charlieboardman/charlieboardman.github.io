@@ -24,7 +24,8 @@ export function parseDancesMarkdown(source) {
     throw new DancesMarkdownError("The dances content must be text.");
   }
 
-  const lines = source.replace(/^\uFEFF/u, "").replace(/\r\n?/gu, "\n").split("\n");
+  const normalizedSource = source.replace(/^\uFEFF/u, "").replace(/\r\n?/gu, "\n");
+  const lines = stripComments(normalizedSource).split("\n");
   const regions = [];
   const places = [];
   const regionIds = new Set();
@@ -127,7 +128,7 @@ export function parseDancesMarkdown(source) {
 
   lines.forEach((rawLine, index) => {
     const lineNumber = index + 1;
-    const line = stripComment(rawLine);
+    const line = rawLine;
     const heading = /^(#{1,6})\s+(.+?)\s*$/u.exec(line);
 
     if (heading?.[1] === "#") {
@@ -184,7 +185,7 @@ export function parseDancesMarkdown(source) {
 
     const property = /^([a-z_]+)\s*=(.*)$/u.exec(line);
     if (!property) {
-      fail("Expected a heading, a key=value field, or a comment.", lineNumber);
+      fail("Expected a heading, a key=value field, or an HTML comment.", lineNumber);
     }
     const [, key, rawValue] = property;
     const record = currentVillage || currentRegion;
@@ -202,22 +203,37 @@ export function parseDancesMarkdown(source) {
   return { regions, places };
 }
 
-export function stripComment(line) {
+export function stripComments(source) {
   let result = "";
-  for (let index = 0; index < line.length; index += 1) {
-    if (line[index] === "\\" && line.slice(index + 1, index + 3) === "//") {
-      result += "//";
-      index += 2;
+  let inComment = false;
+  let commentLine = null;
+  let line = 1;
+
+  for (let index = 0; index < source.length;) {
+    if (!inComment && source.startsWith("<!--", index)) {
+      inComment = true;
+      commentLine = line;
+      index += 4;
       continue;
     }
-    if (
-      line.slice(index, index + 2) === "//"
-      && (index === 0 || /\s/u.test(line[index - 1]))
-    ) {
-      return result.trimEnd();
+    if (inComment && source.startsWith("-->", index)) {
+      inComment = false;
+      commentLine = null;
+      index += 3;
+      continue;
     }
-    result += line[index];
+
+    const character = source[index];
+    if (character === "\n") {
+      result += "\n";
+      line += 1;
+    } else if (!inComment) {
+      result += character;
+    }
+    index += 1;
   }
+
+  if (inComment) fail("This HTML comment is not closed with -->.", commentLine);
   return result;
 }
 

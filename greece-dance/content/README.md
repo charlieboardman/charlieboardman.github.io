@@ -11,7 +11,7 @@ A region is a level-one heading. Its literal heading text is the English display
 name:
 
 ```md
-# Anatoliki Romelia // often called Northern Thrace near Burgas, Bulgaria
+# Anatoliki Romelia <!-- often called Northern Thrace near Burgas, Bulgaria -->
 greek_name=Ανατολική Ρωμυλία
 color=#b85c4a
 ```
@@ -61,18 +61,25 @@ level-four-or-deeper headings.
 
 ## Comments
 
-Comments work globally, including inside info sections. `//` begins a comment
-when it starts a line or is preceded by whitespace:
+Comments use standard HTML comment syntax and work globally, including inside
+info sections. They can appear inline:
 
 ```md
-// This entire line is ignored.
-# Thrace // often called Western Thrace
-color=#4d8f83 // source checked July 2026
+# Thrace <!-- often called Western Thrace -->
+color=#4d8f83 <!-- source checked July 2026 -->
 ```
 
-URLs such as `https://example.com/path//segment` remain intact because their
-slashes do not follow whitespace. Write `\//` to display whitespace-prefixed
-double slashes literally.
+Or span multiple lines:
+
+```md
+<!--
+This entire block is ignored by the parser and hidden in GitHub's preview.
+It can contain editorial notes for future contributors.
+-->
+```
+
+Comments cannot be nested. To display the comment delimiters literally in an
+info section, write them as `&lt;!--` and `--&gt;`.
 
 ## Generated keys
 

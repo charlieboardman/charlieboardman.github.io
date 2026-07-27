@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { DancesMarkdownError, parseDancesMarkdown, stripComment } from "../dances-markdown.js";
+import { DancesMarkdownError, parseDancesMarkdown, stripComments } from "../dances-markdown.js";
 
 test("the canonical Markdown contains the migrated client hierarchy", async () => {
   const source = await readFile(new URL("../content/dances.md", import.meta.url), "utf8");
@@ -37,31 +37,47 @@ test("the canonical Markdown contains the migrated client hierarchy", async () =
   );
 });
 
-test("comments apply globally without damaging URLs or escaped slashes", () => {
+test("HTML comments apply globally and can span multiple lines", () => {
   const atlas = parseDancesMarkdown(`
-# Test Region // source note
-greek_name=Περιοχή // translated name
+# Test Region <!-- source note -->
+greek_name=Περιοχή <!-- translated name -->
 color=#336699
 
-## Test Village // source note
+<!--
+This multi-line comment is ignored.
+It preserves the source line count.
+-->
+
+## Test Village <!-- source note -->
 greek_name=Χωριό
 latitude=40
 longitude=22
 
 ### info
 Visit https://example.com/path//segment
-Keep this \\// literal text.
-Remove this // editorial note
-// Remove this entire line.
+Keep this <!-- remove the aside --> text.
+<!-- Remove this entire line. -->
   `);
 
   assert.equal(atlas.regions[0].name, "Test Region");
   assert.equal(
     atlas.places[0].info,
-    "Visit https://example.com/path//segment\nKeep this // literal text.\nRemove this"
+    "Visit https://example.com/path//segment\nKeep this  text."
   );
-  assert.equal(stripComment("value // note"), "value");
-  assert.equal(stripComment("https://example.com"), "https://example.com");
+  assert.equal(stripComments("value <!-- note -->"), "value ");
+  assert.equal(stripComments("before\n<!-- note\non two lines -->\nafter"), "before\n\n\nafter");
+});
+
+test("unclosed HTML comments identify their starting line", () => {
+  assert.throws(
+    () => parseDancesMarkdown("# Region\n<!-- unfinished"),
+    (error) => {
+      assert.ok(error instanceof DancesMarkdownError);
+      assert.equal(error.location, "dances.md, line 2");
+      assert.equal(error.message, "This HTML comment is not closed with -->.");
+      return true;
+    }
+  );
 });
 
 test("subregion fields must be paired and consistently translated", () => {

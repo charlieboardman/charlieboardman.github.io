@@ -1,4 +1,4 @@
-# Anatoliki Romelia // often called Northern Thrace near Burgas Bulgaria
+# Anatoliki Romelia <!-- often called Northern Thrace near Burgas Bulgaria -->
 greek_name=Ανατολική Ρωμυλία
 color=#b85c4a
 
@@ -38,7 +38,7 @@ Dance 2
 
 etc
 
-# Thrace // often called Western Thrace
+# Thrace <!-- often called Western Thrace -->
 greek_name=Θράκη
 color=#4d8f83
 
@@ -368,7 +368,7 @@ Dance 2
 
 etc
 
-# Pieria // Mt Olympus area
+# Pieria <!-- Mt Olympus area -->
 greek_name=Πιερία
 color=#bf7b4a
 
@@ -460,7 +460,7 @@ Dance 2
 
 etc
 
-## Kerkyra // Corfu
+## Kerkyra <!-- Corfu -->
 greek_name=Κέρκυρα
 latitude=39.591
 longitude=19.86
@@ -580,7 +580,7 @@ etc
 greek_name=Κύπρος
 color=#ad7f32
 
-# Asia Minor // coastal Turkey
+# Asia Minor <!-- coastal Turkey -->
 greek_name=Μικρά Ασία
 color=#ce5f83
 
@@ -596,10 +596,10 @@ Dance 2
 
 etc
 
-# Cappadokia // central Turkey
+# Cappadokia <!-- central Turkey -->
 greek_name=Καππαδοκία
 color=#9a6e4f
 
-# Pontos // North Turkey near Black Sea
+# Pontos <!-- North Turkey near Black Sea -->
 greek_name=Πόντος
 color=#65758f
