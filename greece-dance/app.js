@@ -137,6 +137,14 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   });
 
   function updateRegionTrayHeight() {
+    const chips = [...els.regionList.querySelectorAll(".region-chip")];
+    chips.forEach((chip) => chip.classList.remove("is-last-row"));
+    if (chips.length) {
+      const lastRowTop = Math.max(...chips.map((chip) => chip.offsetTop));
+      chips
+        .filter((chip) => chip.offsetTop === lastRowTop)
+        .forEach((chip) => chip.classList.add("is-last-row"));
+    }
     const height = Math.ceil(els.regionTray.getBoundingClientRect().height);
     els.mapStage.style.setProperty("--region-tray-height", `${height}px`);
   }

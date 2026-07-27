@@ -60,7 +60,7 @@ button { color: inherit; }
 .tray-label { flex: 0 0 auto; display: flex; align-items: center; padding: 0 16px; border-right: 1px solid var(--line); color: #6e7d77; font-size: 10px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; white-space: nowrap; }
 .region-list { min-width: 0; display: flex; flex: 1; flex-wrap: wrap; align-content: stretch; overflow: hidden; }
 .region-chip { position: relative; flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 88px; max-width: 100%; min-height: 30px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; padding: 3px 10px; background: transparent; cursor: pointer; transition: .2s ease; font-family: "DM Sans", sans-serif; font-size: 18px; font-weight: 500; line-height: 1; white-space: nowrap; }
-.region-chip:last-child { flex-grow: 0; }
+.region-chip.is-last-row { flex-grow: 0; }
 .region-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .region-chip::before { content: ""; width: 8px; height: 8px; background: var(--region-color); border-radius: 50%; box-shadow: 0 0 0 3px color-mix(in srgb, var(--region-color) 18%, transparent); }
 .region-chip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--region-color); transform: scaleX(0); transition: transform .2s ease; }
