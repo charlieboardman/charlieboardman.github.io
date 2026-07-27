@@ -58,7 +58,6 @@ button { color: inherit; }
 .language-button:last-child { border-right: 0; }
 .language-button:hover, .language-button.is-active { background: var(--ink); color: var(--white); }
 .language-button.is-active::after { content: ""; position: absolute; left: 7px; right: 7px; bottom: 4px; height: 2px; background: var(--coral); }
-.tray-label { flex: 0 0 auto; display: flex; align-items: center; padding: 0 16px; border-right: 1px solid var(--line); color: #6e7d77; font-size: 10px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; white-space: nowrap; }
 .region-list { min-width: 0; display: flex; flex: 1; flex-wrap: wrap; align-content: stretch; overflow: hidden; }
 .region-chip { position: relative; flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 88px; max-width: 100%; min-height: 30px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; padding: 3px 10px; background: transparent; cursor: pointer; transition: .2s ease; font-family: "DM Sans", sans-serif; font-size: 18px; font-weight: 500; line-height: 1; white-space: nowrap; }
 .region-chip.is-last-row { flex-grow: 0; }
@@ -142,7 +141,6 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 
 @media (max-width: 980px) {
   :root { --panel-width: 350px; }
-  .tray-label { display: none; }
 }
 
 @media (max-width: 720px) {
@@ -156,7 +154,6 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
   .home-button { padding: 0 10px; }
   .language-button { padding: 0 9px; }
   .leaflet-control-attribution { max-width: calc(100vw - 10px); white-space: normal; font-size: 7px !important; line-height: 1.2; }
-  .tray-label { display: none; }
   .region-chip { padding-inline: 8px; }
   .leaflet-control-zoom { margin-right: 15px !important; }
   .mobile-archive-button { display: flex; position: absolute; z-index: 12; right: 15px; bottom: calc(var(--region-tray-height) + 12px); align-items: center; gap: 17px; border: 0; padding: 13px 15px; background: var(--ink); color: var(--white); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; box-shadow: 0 8px 24px rgba(23,39,37,.24); }
