@@ -1,18 +1,16 @@
-import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
-import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentation.js";
+import { DancesMarkdownError, parseDancesMarkdown } from "./dances-markdown.js";
+import { localizedName, sortRegionsAlphabetically } from "./region-presentation.js";
 
 (async () => {
   let regions = [];
   let contentError = null;
   try {
-    if (!window.XLSX?.read) throw new Error("The bundled spreadsheet reader could not be loaded.");
     if (!window.marked?.parse) throw new Error("The bundled Markdown reader could not be loaded.");
-    const atlasUrl = new URL("./content/atlas.xlsx", import.meta.url);
-    atlasUrl.searchParams.set("loaded", Date.now().toString());
-    const response = await fetch(atlasUrl, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Could not load content/atlas.xlsx (HTTP ${response.status}).`);
-    const workbook = window.XLSX.read(await response.arrayBuffer(), { type: "array" });
-    regions = sortRegionsAlphabetically(parseAtlasWorkbook(workbook, window.XLSX).regions);
+    const dancesUrl = new URL("./content/dances.md", import.meta.url);
+    dancesUrl.searchParams.set("loaded", Date.now().toString());
+    const response = await fetch(dancesUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Could not load content/dances.md (HTTP ${response.status}).`);
+    regions = sortRegionsAlphabetically(parseDancesMarkdown(await response.text()).regions);
   } catch (error) {
     contentError = error;
     console.error("Atlas content error:", error);
@@ -34,20 +32,20 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
       ...village,
       infoHtml: renderMarkdown(village.info),
       regionId: region.id,
-      regionName: region.name,
+      regionNames: region.names,
       regionColor: region.color,
       subregionId: null,
-      subregionName: ""
+      subregionNames: { en: "", el: "" }
     })),
     ...(region.subregions || []).flatMap((subregion) =>
       (subregion.villages || []).map((village) => ({
         ...village,
         infoHtml: renderMarkdown(village.info),
         regionId: region.id,
-        regionName: region.name,
+        regionNames: region.names,
         regionColor: region.color,
         subregionId: subregion.id,
-        subregionName: subregion.name
+        subregionNames: subregion.names
       }))
     )
   ]);
@@ -103,7 +101,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
     maxZoom: maxMapZoom,
     noWrap: true,
     bounds: [[mapDataBounds.south, mapDataBounds.west], [mapDataBounds.north, mapDataBounds.east]],
-    attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Village data atlas.xlsx'
+    attribution: 'Map geometry <a href="https://www.naturalearthdata.com/">Natural Earth</a> · Village data dances.md'
   }).addTo(map);
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
@@ -119,6 +117,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
   function setMapLanguage(language) {
     if (!supportedLanguages.includes(language)) return;
     mapLanguage = language;
+    regions = sortRegionsAlphabetically(regions, language);
     els.languageOptions.querySelectorAll(".language-button").forEach((button) => {
       button.classList.toggle("is-active", button.dataset.language === language);
       button.setAttribute("aria-pressed", String(button.dataset.language === language));
@@ -138,6 +137,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
       }
     });
     if (hasRenderedAtlas) {
+      renderRegions();
       if (activeVillage) renderDetail(villageById.get(activeVillage));
       else renderVillages(els.search.value);
     }
@@ -191,7 +191,15 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
   }
 
   function villageLabel(village) {
-    return village.names[mapLanguage] || village.names.en || village.names.el;
+    return localizedName(village, mapLanguage);
+  }
+
+  function regionLabel(region) {
+    return localizedName(region, mapLanguage);
+  }
+
+  function subregionLabel(subregion) {
+    return localizedName(subregion, mapLanguage);
   }
 
   let labelLayoutFrame = null;
@@ -304,7 +312,11 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
 
   function renderRegions() {
     els.regionList.innerHTML = `
-      ${regions.map((region) => `<button class="region-chip" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(region.name)}" aria-pressed="false"><span class="region-chip-label">${escapeHtml(regionDisplayName(region.name))}</span></button>`).join("")}
+      ${regions.map((region) => {
+        const isActive = activeRegion === region.id;
+        const label = regionLabel(region);
+        return `<button class="region-chip${isActive ? " is-active" : ""}" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(label)}" aria-pressed="${isActive}"><span class="region-chip-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span></button>`;
+      }).join("")}
     `;
     els.regionList.querySelectorAll(".region-chip").forEach((button) => {
       const id = button.dataset.region;
@@ -316,16 +328,16 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
   }
 
   function showContentError(error) {
-    const isAtlasError = error instanceof AtlasWorkbookError;
-    const location = isAtlasError && error.location ? `${error.location}: ` : "";
+    const isDancesError = error instanceof DancesMarkdownError;
+    const location = isDancesError && error.location ? `${error.location}: ` : "";
     els.panelTitle.textContent = "Atlas content error";
     els.search.disabled = true;
     els.regionList.innerHTML = "";
     els.villageList.innerHTML = `
       <section class="content-error" role="alert">
-        <p class="content-error-label">Could not read content/atlas.xlsx</p>
+        <p class="content-error-label">Could not read content/dances.md</p>
         <p><strong>${escapeHtml(location)}</strong>${escapeHtml(error.message || String(error))}</p>
-        <p>Fix that cell and reload this page. No build is required.</p>
+        <p>Fix that line and reload this page. No build is required.</p>
       </section>
     `;
     document.querySelector("#mobile-count").textContent = "!";
@@ -357,12 +369,16 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
   }
 
   function filterRegion(region, query) {
-    const regionMatches = Boolean(query) && region.name.toLowerCase().includes(query);
+    const regionMatches = Boolean(query) && Object.values(region.names).some((name) =>
+      name.toLowerCase().includes(query)
+    );
     const regionVillages = villages.filter((village) =>
       village.regionId === region.id && !village.subregionId && (regionMatches || villageMatches(village, query))
     );
     const subregions = (region.subregions || []).map((subregion) => {
-      const subregionMatches = regionMatches || (Boolean(query) && subregion.name.toLowerCase().includes(query));
+      const subregionMatches = regionMatches || (Boolean(query) && Object.values(subregion.names).some((name) =>
+        name.toLowerCase().includes(query)
+      ));
       const subregionVillages = villages.filter((village) =>
         village.regionId === region.id && village.subregionId === subregion.id && (subregionMatches || villageMatches(village, query))
       );
@@ -376,7 +392,12 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
 
   function villageMatches(village, query) {
     if (!query) return true;
-    return [...Object.values(village.names), village.regionName, village.subregionName, village.info]
+    return [
+      ...Object.values(village.names),
+      ...Object.values(village.regionNames),
+      ...Object.values(village.subregionNames),
+      village.info
+    ]
       .filter(Boolean)
       .join(" ")
       .toLowerCase()
@@ -392,7 +413,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
         <summary class="tree-summary tree-region-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-swatch" aria-hidden="true"></span>
-          <span class="tree-label">${escapeHtml(regionDisplayName(region.name))}</span>
+          <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(regionLabel(region))}</span>
           <span class="tree-count" aria-label="${count} ${count === 1 ? "village" : "villages"}">${count}</span>
         </summary>
         <div class="tree-region-children">
@@ -411,7 +432,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
       <details class="tree-subregion" data-folder="${escapeAttribute(key)}"${isOpen ? " open" : ""}>
         <summary class="tree-summary tree-subregion-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
-          <span class="tree-label">${escapeHtml(subregion.name)}</span>
+          <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(subregionLabel(subregion))}</span>
           <span class="tree-count" aria-label="${subregion.villages.length} ${subregion.villages.length === 1 ? "village" : "villages"}">${subregion.villages.length}</span>
         </summary>
         <div class="tree-villages">${subregion.villages.map(renderVillageRow).join("") || '<p class="tree-empty">No village records yet</p>'}</div>
@@ -506,8 +527,9 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
     els.villageList.hidden = false;
     els.archive.classList.remove("is-detail");
     const selectedRegion = activeRegion ? regions.find((region) => region.id === activeRegion) : null;
-    const panelTitle = selectedRegion ? regionDisplayName(selectedRegion.name) : "";
+    const panelTitle = selectedRegion ? regionLabel(selectedRegion) : "";
     els.panelTitle.textContent = panelTitle;
+    els.panelTitle.lang = mapLanguage;
     els.panelTitle.hidden = !panelTitle;
     els.archive.classList.toggle("has-panel-title", Boolean(panelTitle));
     renderVillages(els.search.value);

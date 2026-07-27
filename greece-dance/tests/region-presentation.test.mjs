@@ -1,28 +1,28 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { regionDisplayName, sortRegionsAlphabetically } from "../region-presentation.js";
+import { localizedName, sortRegionsAlphabetically } from "../region-presentation.js";
 
-test("regionDisplayName removes parenthetical notes", () => {
-  assert.equal(
-    regionDisplayName("Anatoliki Romelia (often called Northern Thrace near Burgas Bulgaria)"),
-    "Anatoliki Romelia"
-  );
-  assert.equal(regionDisplayName("Pieria (Mt Olympus area)"), "Pieria");
+test("localizedName uses the requested language with sensible fallbacks", () => {
+  assert.equal(localizedName({ names: { en: "Thessaly", el: "Θεσσαλία" } }, "el"), "Θεσσαλία");
+  assert.equal(localizedName({ names: { en: "Thessaly", el: "" } }, "el"), "Thessaly");
 });
 
-test("sortRegionsAlphabetically orders regions by their displayed names", () => {
+test("sortRegionsAlphabetically orders regions in the displayed language", () => {
   const regions = [
-    { id: "thrace", name: "Thrace (often called Western Thrace)" },
-    { id: "asia-minor", name: "Asia Minor (coastal Turkey)" },
-    { id: "anatoliki-romelia", name: "Anatoliki Romelia (Northern Thrace)" }
+    { id: "beta", names: { en: "Beta", el: "Άλφα" } },
+    { id: "alpha", names: { en: "Alpha", el: "Βήτα" } }
   ];
 
   assert.deepEqual(
     sortRegionsAlphabetically(regions).map((region) => region.id),
-    ["anatoliki-romelia", "asia-minor", "thrace"]
+    ["alpha", "beta"]
+  );
+  assert.deepEqual(
+    sortRegionsAlphabetically(regions, "el").map((region) => region.id),
+    ["beta", "alpha"]
   );
   assert.deepEqual(
     regions.map((region) => region.id),
-    ["thrace", "asia-minor", "anatoliki-romelia"]
+    ["beta", "alpha"]
   );
 });

@@ -1,13 +1,13 @@
 # Dance Atlas
 
-Dance Atlas is a completely static website plus an optional map-tile workshop, all
-in this one directory.
+Dance Atlas is a completely static website plus an optional map-tile workshop,
+all in this one directory.
 
-- [`content/atlas.xlsx`](content/atlas.xlsx) is the canonical database.
-- The browser reads that workbook directly on every page load. Interactive content
+- [`content/dances.md`](content/dances.md) is the canonical content source.
+- The browser reads and validates that file directly on every page load. Content
   changes need no build step and no GitHub Action.
-- The browser renders village labels from the workbook as an interactive map
-  overlay.
+- The browser renders localized village labels from the Markdown as an
+  interactive map overlay.
 - [`assets/map/`](assets/map/) contains the prebuilt, geometry-only map tiles
   served by the static site.
 
@@ -16,12 +16,9 @@ The published app is:
 
 ## Editing content
 
-Open `content/atlas.xlsx` in Excel, LibreOffice, Google Sheets or another
-spreadsheet editor. Commit the saved file and refresh the site. The `has_dance`
-column explicitly decides whether a place gets an interactive dot and archive
-entry.
-
-The complete workbook schema and editing guide are in
+Edit `content/dances.md`, commit it and refresh the site. Regions and villages
+use English Markdown headings plus Greek names and other fields beneath them.
+The complete format and editing guide are in
 [`content/README.md`](content/README.md).
 
 ## Previewing locally
@@ -33,13 +30,13 @@ npm install
 npm run dev
 ```
 
-Then open <http://localhost:8000/>. A local web server is required because browsers
-do not allow the page to `fetch()` its workbook from a `file:` URL.
+Then open <http://localhost:8000/>. A local web server is required because
+browsers do not allow the page to `fetch()` its content from a `file:` URL.
 
 ## Rebuilding the map
 
-This is only necessary after changing the map geometry source or rendering style.
-Workbook edits never require a tile rebuild.
+This is only necessary after changing the map geometry source or rendering
+style. Content edits never require a tile rebuild.
 
 ```bash
 npm install
@@ -47,11 +44,10 @@ npm run fetch:map-data
 npm run build
 ```
 
-`fetch:map-data` downloads Natural Earth country, province and lake geometry into
-the ignored `map-source/data/` cache. Existing files are reused. `npm run build`
-reads `content/atlas.xlsx` and replaces `assets/map/` in place, so the static site
-immediately uses the result. Review the changes, then commit and push this
-repository normally.
+`fetch:map-data` downloads Natural Earth country, province and lake geometry
+into the ignored `map-source/data/` cache. Existing files are reused. `npm run
+build` replaces `assets/map/` with geometry-only tiles. Review the changes, then
+commit and push this repository normally.
 
 To deliberately refresh the Natural Earth downloads:
 
@@ -60,24 +56,24 @@ npm run fetch:map-data -- --force
 ```
 
 There is no GitHub Action or deployment build. GitHub Pages serves the committed
-HTML, JavaScript, workbook and tiles exactly as they are.
+HTML, JavaScript, Markdown and tiles exactly as they are.
 
 ## Project structure
 
 ```text
 index.html                  Static application
 app.js                      Browser UI and map
-atlas-workbook.js           Shared XLSX validation and hierarchy parser
-content/atlas.xlsx          Canonical database
-content/README.md           Spreadsheet editing guide
+dances-markdown.js          dances.md validation and hierarchy parser
+region-presentation.js      Localized names and region sorting
+content/dances.md           Canonical content source
+content/README.md           Markdown editing guide
 assets/map/                 Committed prebuilt map tiles
 map-source/data/            Ignored Natural Earth download cache
 scripts/fetch-map-data.mjs  Geometry downloader
-scripts/build-map.mjs       Workbook-to-map renderer
-tests/                      Workbook/parser tests
-vendor/                     Browser copies of Marked and SheetJS
+scripts/build-map.mjs       Geometry-only map renderer
+tests/                      Content/parser tests
+vendor/                     Browser copy of Marked
 ```
 
-Natural Earth geometry is public domain. SheetJS reads the workbook and Marked
-renders Markdown from the optional `info` cells; their licenses are included in
-`vendor/`.
+Natural Earth geometry is public domain. Marked renders village information
+sections; its license is included in `vendor/`.

@@ -31,7 +31,7 @@ Mercator WebP tiles for zoom levels 5–9. Each geographic tile contains 512 ima
 pixels for a 256 CSS-pixel tile, keeping borders sharp on high-density screens
 and when the static site scales beyond native zoom 9.
 
-The tiles contain no text. Village labels come from `content/atlas.xlsx` and are
+The tiles contain no text. Village labels come from `content/dances.md` and are
 rendered by the browser as a collision-aware interactive overlay. OpenStreetMap
 and Overpass are not used.
 

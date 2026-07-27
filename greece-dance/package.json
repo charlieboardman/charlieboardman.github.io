@@ -11,8 +11,7 @@
     "test": "node --test"
   },
   "dependencies": {
-    "sharp": "^0.35.3",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "sharp": "^0.35.3"
   },
   "description": "A no-build static Dance Atlas and its optional map-tile builder"
 }

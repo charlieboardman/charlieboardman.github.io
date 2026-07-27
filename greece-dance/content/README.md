@@ -1,66 +1,92 @@
-# Editing `atlas.xlsx`
+# Editing `dances.md`
 
-[`atlas.xlsx`](atlas.xlsx) is the single canonical database for Dance Atlas. It
-contains two sheets: `Places` and `Regions`.
+[`dances.md`](dances.md) is the single canonical content source for Dance Atlas.
+The published page fetches and validates it in the visitor's browser on every
+load. Save and commit an edit, then refresh the site; there is no content build
+or generated index.
 
-The published page fetches this workbook and builds the interactive dots, region
-tray, hierarchy and village information in the visitor's browser on every load.
-Save and commit an edit, then refresh the site; there is no content build or
-generated index.
+## Format
 
-Village labels are rendered in the browser beside their interactive dots. They
-appear on hover or keyboard focus at crowded zoom levels, then remain visible
-once the complete label set no longer collides.
+A region is a level-one heading. Its literal heading text is the English display
+name:
 
-## `Places`
+```md
+# Anatoliki Romelia // often called Northern Thrace near Burgas, Bulgaria
+greek_name=Ανατολική Ρωμυλία
+color=#b85c4a
+```
 
-Do not rename or remove the columns:
+Every region requires:
 
-| Column | What goes in it |
+| Field | What goes in it |
 | --- | --- |
-| `id` | A permanent unique ID using lowercase letters, numbers and hyphens. |
+| `greek_name` | The region's Greek display name. |
+| `color` | A six-digit hex color such as `#e5a83f`. |
+
+A region remains visible even when it has no villages.
+
+A village is a level-two heading beneath its region. Its literal heading text is
+the English display name:
+
+```md
+## Argithea
+greek_name=Αργιθέα
+latitude=39.357
+longitude=21.538
+subregion=Agrafa
+subregion_greek_name=Άγραφα
+
+### info
+Markdown about Argithea and its dances goes here.
+```
+
+Every village requires:
+
+| Field | What goes in it |
+| --- | --- |
+| `greek_name` | The village's Greek display name. |
 | `latitude` | Latitude between -90 and 90. |
 | `longitude` | Longitude between -180 and 180. |
-| `name_en` | English name. At least one name column must be filled. |
-| `name_el` | Greek name. At least one name column must be filled. |
-| `has_dance` | `TRUE` to create an interactive dot, map label and archive entry; `FALSE` to omit the place from the published interface. |
-| `region` | A region ID from the `Regions` sheet. Required when `has_dance` is `TRUE`. |
-| `subregion` | Optional display name. Leave blank for a village directly inside its region. |
-| `info` | Optional Markdown about the village and its dances. Multi-line cell text is fine. |
-| `kind` | Reserved classification such as `city`, `town`, or `village`; the current renderer gives every place the same visual style. |
+| `subregion` | Optional English subregion name. |
+| `subregion_greek_name` | Greek subregion name; required whenever `subregion` is present. |
 
-Every `Places` row requires an ID, coordinates, at least one name, and an explicit
-`has_dance` value. `TRUE`, `FALSE`, `yes`, `no`, `1`, and `0` are accepted.
+Villages with the same `subregion` are grouped together in the archive. Repeat
+the same `subregion_greek_name` for each of them; validation rejects conflicting
+translations. Omit both subregion fields to place a village directly beneath its
+region.
 
-The hierarchy is straightforward:
+The optional `### info` section continues until the next village or region. Its
+body is Markdown and may contain paragraphs, links, lists, emphasis and
+level-four-or-deeper headings.
 
-- `has_dance = TRUE`, region filled, subregion blank: village directly under the
-  region.
-- `has_dance = TRUE`, region and subregion filled: village inside that subregion.
-- `has_dance = FALSE`: no interactive dot, label, or archive entry. Region,
-  subregion and information are optional organizational notes.
+## Comments
 
-## `Regions`
+Comments work globally, including inside info sections. `//` begins a comment
+when it starts a line or is preceded by whitespace:
 
-The `Regions` sheet controls the browse tray and archive grouping:
+```md
+// This entire line is ignored.
+# Thrace // often called Western Thrace
+color=#4d8f83 // source checked July 2026
+```
 
-| Column | What goes in it |
-| --- | --- |
-| `id` | The permanent ID referenced by `Places.region`. |
-| `name_en` / `name_el` | Region names; at least one is required. |
-| `color` | A six-digit hex color such as `#e5a83f`. |
-| `order` | A unique positive whole number retained for workbook compatibility. Regions display alphabetically by name. |
+URLs such as `https://example.com/path//segment` remain intact because their
+slashes do not follow whitespace. Write `\//` to display whitespace-prefixed
+double slashes literally.
 
-A region remains visible even when no place currently points to it.
+## Generated keys
+
+There are no stored IDs. The parser generates internal keys from the English
+region, subregion and village names. Avoid duplicate names within the same
+hierarchy and avoid names that differ only by punctuation or accents if they
+would produce the same simplified key.
 
 ## Friendly errors
 
-If the workbook is malformed, the site shows the exact sheet, row, column, and a
-plain-language explanation. For example:
+Malformed content produces an exact line and field in the published interface:
 
 ```text
-Places, row 14, column “latitude”: This cell must be a number.
+dances.md, line 42, field “latitude”: This field must be a number.
 ```
 
-Correct the named cell, save the workbook and reload. The column headers and sheet
-names are part of the format and should not be changed.
+Correct the named line, save the file and reload.

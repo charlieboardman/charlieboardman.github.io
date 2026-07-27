@@ -1,18 +1,14 @@
-const regionCollator = new Intl.Collator("en", {
-  numeric: true,
-  sensitivity: "base"
-});
-
-export function regionDisplayName(regionName) {
-  return String(regionName)
-    .replace(/\s*\([^)]*\)/gu, "")
-    .replace(/\s{2,}/gu, " ")
-    .trim();
+export function localizedName(item, language) {
+  return item.names?.[language] || item.names?.en || item.names?.el || item.name || "";
 }
 
-export function sortRegionsAlphabetically(regions) {
+export function sortRegionsAlphabetically(regions, language = "en") {
+  const collator = new Intl.Collator(language, {
+    numeric: true,
+    sensitivity: "base"
+  });
   return [...regions].sort((first, second) =>
-    regionCollator.compare(regionDisplayName(first.name), regionDisplayName(second.name))
-    || regionCollator.compare(first.id, second.id)
+    collator.compare(localizedName(first, language), localizedName(second, language))
+    || collator.compare(first.id, second.id)
   );
 }
