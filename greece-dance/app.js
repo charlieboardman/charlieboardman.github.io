@@ -64,6 +64,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
     archive: document.querySelector("#archive-panel"),
     mobileArchive: document.querySelector("#mobile-archive-button"),
     panelClose: document.querySelector("#panel-close"),
+    homeButton: document.querySelector("#home-button"),
     languageOptions: document.querySelector("#language-options")
   };
 
@@ -84,6 +85,10 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
     zoomControl: false,
     attributionControl: true
   });
+  let initialMapView = {
+    center: [map.getCenter().lat, map.getCenter().lng],
+    zoom: map.getZoom()
+  };
 
   const supportedLanguages = ["en", "el"];
   let mapLanguage = "en";
@@ -282,18 +287,22 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
       fittedZoom,
       { animate: false }
     );
+    const initialCenter = map.getCenter();
+    initialMapView = {
+      center: [initialCenter.lat, initialCenter.lng],
+      zoom: map.getZoom()
+    };
   }
 
   function renderRegions() {
     els.regionList.innerHTML = `
-      <button class="region-chip is-active" data-region="all" style="--region-color:#e16b55" role="listitem"><span class="region-chip-label">All regions</span></button>
-      ${regions.map((region) => `<button class="region-chip" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(region.name)}"><span class="region-chip-label">${escapeHtml(regionDisplayName(region.name))}</span></button>`).join("")}
+      ${regions.map((region) => `<button class="region-chip" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(region.name)}" aria-pressed="false"><span class="region-chip-label">${escapeHtml(regionDisplayName(region.name))}</span></button>`).join("")}
     `;
     els.regionList.querySelectorAll(".region-chip").forEach((button) => {
-      const id = button.dataset.region === "all" ? null : button.dataset.region;
+      const id = button.dataset.region;
       button.addEventListener("mouseenter", () => previewRegion(id));
       button.addEventListener("mouseleave", () => previewRegion(activeRegion));
-      button.addEventListener("click", () => selectRegion(id));
+      button.addEventListener("click", () => selectRegion(activeRegion === id ? null : id));
     });
     requestAnimationFrame(updateRegionTrayHeight);
   }
@@ -431,9 +440,18 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
     activeRegion = id;
     activeVillage = null;
     if (id) expandedRegions.add(id);
-    els.regionList.querySelectorAll(".region-chip").forEach((chip) => chip.classList.toggle("is-active", (chip.dataset.region === "all" ? null : chip.dataset.region) === id));
+    els.regionList.querySelectorAll(".region-chip").forEach((chip) => {
+      const isActive = chip.dataset.region === id;
+      chip.classList.toggle("is-active", isActive);
+      chip.setAttribute("aria-pressed", String(isActive));
+    });
     previewRegion(id);
     showList();
+  }
+
+  function goHome() {
+    selectRegion(null);
+    map.setView(initialMapView.center, initialMapView.zoom, { animate: false });
   }
 
   function previewRegion(id) {
@@ -488,6 +506,7 @@ import { regionDisplayName, sortRegionsAlphabetically } from "./region-presentat
   }
 
   els.search.addEventListener("input", showList);
+  els.homeButton.addEventListener("click", goHome);
   els.mobileArchive.addEventListener("click", () => els.archive.classList.add("is-open"));
   els.panelClose.addEventListener("click", () => els.archive.classList.remove("is-open"));
   document.addEventListener("keydown", (event) => {

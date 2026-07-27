@@ -51,7 +51,8 @@ button { color: inherit; }
 .eyebrow { margin: 0 0 10px; color: #6e7d77; font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
 .region-tray { position: absolute; z-index: 11; left: 0; right: 0; bottom: 0; min-height: 31px; display: flex; align-items: stretch; background: rgba(243,239,231,.96); border-top: 1px solid rgba(23,39,37,.2); box-shadow: 0 -10px 35px rgba(19,43,38,.1); backdrop-filter: blur(10px); }
 .language-control { position: absolute; z-index: 11; left: 20px; top: 20px; display: flex; align-items: stretch; min-height: 42px; background: rgba(243,239,231,.94); border: 1px solid rgba(23,39,37,.18); box-shadow: 0 7px 22px rgba(19,43,38,.11); backdrop-filter: blur(8px); }
-.language-label { display: flex; align-items: center; padding: 0 13px; border-right: 1px solid var(--line); color: #687772; font-size: 8px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.home-button { display: flex; align-items: center; border: 0; border-right: 1px solid var(--line); padding: 0 13px; background: transparent; color: #687772; cursor: pointer; font-size: 8px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; transition: background .18s ease, color .18s ease; }
+.home-button:hover { background: var(--ink); color: var(--white); }
 .language-options { display: flex; }
 .language-button { position: relative; border: 0; border-right: 1px solid var(--line); padding: 0 11px; background: transparent; color: #53615d; cursor: pointer; font-size: 9px; transition: background .18s ease, color .18s ease; }
 .language-button:last-child { border-right: 0; }
@@ -152,9 +153,8 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
   .atlas { display: block; }
   .map-stage { height: calc(100vh - var(--header-height)); }
   .language-control { left: 12px; top: 12px; min-height: 39px; max-width: calc(100% - 24px); }
-  .language-label { display: none; }
-  .language-options { width: 100%; }
-  .language-button { flex: 1; padding: 0 9px; }
+  .home-button { padding: 0 10px; }
+  .language-button { padding: 0 9px; }
   .leaflet-control-attribution { max-width: calc(100vw - 10px); white-space: normal; font-size: 7px !important; line-height: 1.2; }
   .tray-label { display: none; }
   .region-chip { padding-inline: 8px; }
