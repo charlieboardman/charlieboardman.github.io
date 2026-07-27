@@ -172,6 +172,10 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
     return village.names[mapLanguage] || village.names.en || village.names.el;
   }
 
+  function trayRegionLabel(regionName) {
+    return regionName.replace(/\s*\([^)]*\)/g, "").replace(/\s{2,}/g, " ").trim();
+  }
+
   let labelLayoutFrame = null;
   function scheduleMapLabelLayout() {
     if (labelLayoutFrame !== null) cancelAnimationFrame(labelLayoutFrame);
@@ -278,7 +282,7 @@ import { AtlasWorkbookError, parseAtlasWorkbook } from "./atlas-workbook.js";
   function renderRegions() {
     els.regionList.innerHTML = `
       <button class="region-chip is-active" data-region="all" style="--region-color:#e16b55" role="listitem"><span class="region-chip-label">All regions</span></button>
-      ${regions.map((region) => `<button class="region-chip" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(region.name)}"><span class="region-chip-label">${escapeHtml(region.name)}</span></button>`).join("")}
+      ${regions.map((region) => `<button class="region-chip" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" role="listitem" title="${escapeAttribute(region.name)}"><span class="region-chip-label">${escapeHtml(trayRegionLabel(region.name))}</span></button>`).join("")}
     `;
     els.regionList.querySelectorAll(".region-chip").forEach((button) => {
       const id = button.dataset.region === "all" ? null : button.dataset.region;
