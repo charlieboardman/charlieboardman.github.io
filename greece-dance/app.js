@@ -270,6 +270,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const expandedRegions = new Set();
   const expandedSubregions = new Set();
   let activeRegion = null;
+  let hoveredRegion = null;
   let activeVillage = null;
   let hasRenderedAtlas = false;
 
@@ -413,6 +414,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   }
 
   function renderRegions() {
+    hoveredRegion = null;
     els.regionList.innerHTML = `
       ${regions.map((region) => {
         const isActive = activeRegion === region.id;
@@ -422,10 +424,17 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     `;
     els.regionList.querySelectorAll(".region-chip").forEach((button) => {
       const id = button.dataset.region;
-      button.addEventListener("mouseenter", () => previewRegion(id));
-      button.addEventListener("mouseleave", () => previewRegion(activeRegion));
+      button.addEventListener("mouseenter", () => {
+        hoveredRegion = id;
+        updateRegionMarkerColors();
+      });
+      button.addEventListener("mouseleave", () => {
+        hoveredRegion = null;
+        updateRegionMarkerColors();
+      });
       button.addEventListener("click", () => selectRegion(activeRegion === id ? null : id));
     });
+    updateRegionMarkerColors();
     requestAnimationFrame(updateRegionTrayHeight);
   }
 
@@ -576,7 +585,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       chip.classList.toggle("is-active", isActive);
       chip.setAttribute("aria-pressed", String(isActive));
     });
-    previewRegion(id);
+    updateRegionMarkerColors();
     showList();
   }
 
@@ -585,10 +594,14 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     map.jumpTo(initialMapView);
   }
 
-  function previewRegion(id) {
+  function updateRegionMarkerColors() {
+    const highlightedRegion = hoveredRegion || activeRegion;
     markerById.forEach((marker, villageId) => {
       const village = villageById.get(villageId);
-      marker.getElement()?.querySelector(".village-marker")?.classList.toggle("is-muted", Boolean(id) && village.regionId !== id);
+      marker
+        .getElement()
+        ?.querySelector(".village-marker")
+        ?.classList.toggle("is-region-highlighted", village.regionId === highlightedRegion);
     });
   }
 
