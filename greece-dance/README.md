@@ -47,6 +47,31 @@ There is no GitHub Action or deployment build. GitHub Pages serves the committed
 HTML, JavaScript and Markdown exactly as they are. Map geography updates from
 OpenStreetMap at runtime.
 
+## Region color palette
+
+Region colors are a fixed categorical palette selected with a Glasbey-style
+maximin process. Candidate colors are sampled in OKLCH, which makes geometric
+distance correspond much more closely to perceived difference than RGB or HSL.
+Candidates must:
+
+- fit inside the sRGB gamut;
+- have OKLCH lightness from 0.56 to 0.76 and chroma from 0.13 to 0.28, keeping
+  them bright and vivid;
+- maintain at least 3.5:1 contrast against the map's neutral black dots and
+  2.15:1 against the pale `#edf2ec` land color.
+
+A multi-start farthest-point search chooses the candidate whose nearest
+existing palette color is farthest away in OKLab at each step. The resulting
+colors are converted to hex and stored explicitly in
+[`content/dances.md`](content/dances.md), so a region never changes color just
+because content was added or reordered. The current colors were assigned to
+minimize their total perceptual shift from the previous palette.
+
+When adding a region, retain all existing assignments and choose the valid
+candidate with the greatest minimum OKLab distance from the colors already in
+use. Do not regenerate the whole palette: stable region identity is more
+valuable than a small global improvement after each edit.
+
 ## Project structure
 
 ```text

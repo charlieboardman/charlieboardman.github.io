@@ -13,7 +13,7 @@ name:
 ```md
 # Anatoliki Romelia <!-- often called Northern Thrace near Burgas, Bulgaria -->
 greek_name=Ανατολική Ρωμυλία
-color=#b85c4a
+color=#d71908
 ```
 
 Every region requires:
@@ -21,9 +21,12 @@ Every region requires:
 | Field | What goes in it |
 | --- | --- |
 | `greek_name` | The region's Greek display name. |
-| `color` | A six-digit hex color such as `#e5a83f`. |
+| `color` | A six-digit hex color such as `#fe843d`. |
 
 A region remains visible even when it has no villages.
+Keep existing region colors stable. When adding a region, follow the
+[palette-selection method](../README.md#region-color-palette) rather than
+reassigning the existing colors.
 
 A village is a level-two heading beneath its region. Its literal heading text is
 the English display name:
@@ -67,7 +70,7 @@ info sections. They can appear inline:
 
 ```md
 # Thrace <!-- often called Western Thrace -->
-color=#4d8f83 <!-- source checked July 2026 -->
+color=#15b898 <!-- source checked July 2026 -->
 ```
 
 Or span multiple lines:

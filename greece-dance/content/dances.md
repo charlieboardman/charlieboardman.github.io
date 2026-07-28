@@ -1,6 +1,6 @@
 # Anatoliki Romelia <!-- often called Northern Thrace near Burgas Bulgaria -->
 greek_name=Ανατολική Ρωμυλία
-color=#b85c4a
+color=#d71908
 
 ## Bana
 greek_name=Μπάνα
@@ -40,7 +40,7 @@ etc
 
 # Thrace <!-- often called Western Thrace -->
 greek_name=Θράκη
-color=#4d8f83
+color=#15b898
 
 ## Asvestades
 greek_name=Ασβεστάδες
@@ -68,7 +68,7 @@ etc
 
 # Macedonia, Eastern
 greek_name=Μακεδονία, Ανατολική
-color=#3f77a6
+color=#0365fd
 
 ## Serres
 greek_name=Σέρρες
@@ -96,7 +96,7 @@ etc
 
 # Thessaloniki
 greek_name=Θεσσαλονίκη
-color=#a66b3f
+color=#af5a1f
 
 ## Pylaia
 greek_name=Πυλαία
@@ -112,7 +112,7 @@ etc
 
 # Macedonia, Northern
 greek_name=Μακεδονία, Βόρεια
-color=#e5a83f
+color=#fe843d
 
 ## Aridaia
 greek_name=Αριδαία
@@ -188,7 +188,7 @@ etc
 
 # Macedonia, Central
 greek_name=Μακεδονία, Κεντρική
-color=#6f8f4d
+color=#879f18
 
 ## Goumenissa
 greek_name=Γουμένισσα
@@ -228,7 +228,7 @@ etc
 
 # Macedonia, Western
 greek_name=Μακεδονία, Δυτική
-color=#7c6aaa
+color=#9322fb
 
 ## Florina
 greek_name=Φλώρινα
@@ -280,7 +280,7 @@ etc
 
 # Attiki
 greek_name=Αττική
-color=#ce5e33
+color=#fb4c10
 
 ## Megara
 greek_name=Μέγαρα
@@ -308,11 +308,11 @@ etc
 
 # Peloponnisos
 greek_name=Πελοπόννησος
-color=#9b7554
+color=#fa5cfe
 
 # Thessaly
 greek_name=Θεσσαλία
-color=#5f8f6e
+color=#2dbe01
 
 ## Sofades
 greek_name=Σοφάδες
@@ -370,7 +370,7 @@ etc
 
 # Pieria <!-- Mt Olympus area -->
 greek_name=Πιερία
-color=#bf7b4a
+color=#e887b5
 
 ## Rizomata
 greek_name=Ριζώματα
@@ -434,19 +434,19 @@ etc
 
 # Epirus
 greek_name=Ήπειρος
-color=#667d5e
+color=#148a53
 
 # Sarakatsani
 greek_name=Σαρακατσάνοι
-color=#8a6d5b
+color=#c9237d
 
 # Evia
 greek_name=Εύβοια
-color=#4f8b86
+color=#46acfc
 
 # Ionian Islands
 greek_name=Ιόνια Νησιά
-color=#4b78a2
+color=#5b83f8
 
 ## Kefallonia
 greek_name=Κεφαλονιά
@@ -486,7 +486,7 @@ etc
 
 # Cyclades Islands
 greek_name=Κυκλάδες
-color=#5d8fad
+color=#ac82ff
 
 ## Naxos
 greek_name=Νάξος
@@ -526,11 +526,11 @@ etc
 
 # Sporades Islands
 greek_name=Σποράδες
-color=#3f8778
+color=#0c82bf
 
 # Aegean Islands
 greek_name=Νησιά του Αιγαίου
-color=#566eaa
+color=#735ed1
 
 ## Lesvos
 greek_name=Λέσβος
@@ -546,11 +546,11 @@ etc
 
 # Dodecanese Islands
 greek_name=Δωδεκάνησα
-color=#8b6bb3
+color=#d00aca
 
 # Crete
 greek_name=Κρήτη
-color=#c45f45
+color=#fe1363
 
 ## Hania
 greek_name=Χανιά
@@ -578,11 +578,11 @@ etc
 
 # Cyprus
 greek_name=Κύπρος
-color=#ad7f32
+color=#c0851f
 
 # Asia Minor <!-- coastal Turkey -->
 greek_name=Μικρά Ασία
-color=#ce5f83
+color=#fd3ab3
 
 ## Alatsata
 greek_name=Αλάτσατα
@@ -598,8 +598,8 @@ etc
 
 # Cappadokia <!-- central Turkey -->
 greek_name=Καππαδοκία
-color=#9a6e4f
+color=#cf6872
 
 # Pontos <!-- North Turkey near Black Sea -->
 greek_name=Πόντος
-color=#65758f
+color=#a862a8
