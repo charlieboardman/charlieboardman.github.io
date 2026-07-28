@@ -70,9 +70,9 @@ button { color: inherit; }
 .village-icon { width: 18px; height: 18px; overflow: visible !important; border: 0; padding: 0; background: transparent; cursor: pointer; }
 .village-marker-shell { position: relative; display: block; width: 18px; height: 18px; }
 .village-marker-scale { position: absolute; inset: 0; transform: scale(var(--marker-scale, .5)); transform-origin: center; transition: transform .18s ease; }
-.village-marker { --marker-display-color: #000; position: relative; display: block; flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: var(--marker-display-color); border: 1px solid rgba(255,253,248,.95); box-shadow: 0 1px 4px rgba(21,39,37,.3); transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
+.village-marker { --marker-display-color: #000; position: relative; display: block; flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: var(--marker-display-color); border: 1px solid rgba(255,253,248,.95); box-shadow: 0 1px 4px rgba(21,39,37,.3); transform: scale(.68); transition: transform .22s cubic-bezier(.2,.8,.2,1), background .18s ease, box-shadow .18s ease; }
 .village-marker::after { content: ""; position: absolute; inset: -3px; border: .5px solid var(--marker-display-color); border-radius: 50%; opacity: 0; transform: scale(.5); transition: .2s ease; }
-.village-marker.is-region-highlighted { --marker-display-color: var(--marker-color); }
+.village-marker.is-region-highlighted { --marker-display-color: var(--marker-color); transform: scale(1); }
 .village-marker:hover, .village-marker.is-active { transform: scale(1.32); box-shadow: 0 1.5px 6px rgba(21,39,37,.4); }
 .village-marker:hover::after, .village-marker.is-active::after { opacity: .65; transform: scale(1); }
 .village-map-label { position: absolute; z-index: 1; left: 50%; top: 22px; width: max-content; transform: translateX(-50%); color: #75847f; font: 500 16px/1 "DM Sans", sans-serif; text-align: center; white-space: nowrap; opacity: 0; pointer-events: none; paint-order: stroke fill; -webkit-text-stroke: 2.6px #edf2ec; text-shadow: 0 0 1px #edf2ec; transition: opacity .12s ease; }
