@@ -20,6 +20,10 @@
           <span class="brand-mark">logo here</span>
           <h1 class="brand-name">Title here</h1>
         </div>
+        <div class="language-options" id="language-options" role="group" aria-label="Display language">
+          <button class="language-button is-active" type="button" data-language="en" aria-pressed="true">English</button>
+          <button class="language-button" type="button" data-language="el" lang="el" aria-pressed="false">Ελληνικά</button>
+        </div>
       </header>
 
       <main class="atlas">
@@ -27,13 +31,7 @@
           <div id="map"></div>
           <div class="map-wash" aria-hidden="true"></div>
 
-          <div class="language-control" role="group" aria-label="Map controls">
-            <button class="home-button" id="home-button" type="button">Home</button>
-            <div class="language-options" id="language-options">
-              <button class="language-button is-active" type="button" data-language="en" aria-pressed="true">English</button>
-              <button class="language-button" type="button" data-language="el" lang="el" aria-pressed="false">Ελληνικά</button>
-            </div>
-          </div>
+          <button class="home-button" id="home-button" type="button">Home</button>
 
           <nav class="region-tray" aria-label="Browse regions">
             <div class="region-list" id="region-list"></div>
