@@ -81,11 +81,12 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   document.querySelector("#mobile-count").textContent = String(villages.length).padStart(2, "0");
 
-  const mapDataBounds = { south: 34, west: 18, north: 43.5, east: 34.5 };
-  const minMapZoom = 5;
+  const mapDataBounds = { south: 34, west: 18, north: 43.5, east: 35 };
+  const navigationBounds = { south: 33, west: 16.5, north: 44, east: 37.5 };
+  const homeViewBounds = { south: 34.5, west: 19.5, north: 42.8, east: 34.7 };
+  const compactMapView = window.matchMedia("(max-width: 720px)").matches;
+  const minMapZoom = compactMapView ? 5 : 5.7;
   const maxMapZoom = 11;
-  const homeZoomOffset = -1;
-  const homeLongitudeOffset = 1;
   const minimumMarkerDiameter = 9;
   const maximumMarkerDiameter = 18;
   const map = new MapLibreMap({
@@ -94,6 +95,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     zoom: 6,
     minZoom: minMapZoom,
     maxZoom: maxMapZoom,
+    maxBounds: [
+      [navigationBounds.west, navigationBounds.south],
+      [navigationBounds.east, navigationBounds.north]
+    ],
     attributionControl: false,
     renderWorldCopies: false,
     dragRotate: false,
@@ -390,12 +395,17 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   function fitInitialMapView() {
     if (hasFitInitialMapView || !villages.length) return;
     hasFitInitialMapView = true;
-    const villageBounds = villages.reduce(
+    const homeBounds = villages.reduce(
       (bounds, village) => bounds.extend(villageLngLat(village)),
       new LngLatBounds()
     );
-    const horizontalPadding = window.matchMedia("(max-width: 720px)").matches ? 24 : 48;
-    map.fitBounds(villageBounds, {
+    if (!compactMapView) {
+      homeBounds
+        .extend([homeViewBounds.west, homeViewBounds.south])
+        .extend([homeViewBounds.east, homeViewBounds.north]);
+    }
+    const horizontalPadding = compactMapView ? 24 : 48;
+    map.fitBounds(homeBounds, {
       padding: {
         top: 20,
         right: horizontalPadding,
@@ -405,12 +415,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       duration: 0,
       retainPadding: false
     });
-    const fittedCenter = map.getCenter();
     initialMapView = {
-      center: [fittedCenter.lng + homeLongitudeOffset, fittedCenter.lat],
-      zoom: Math.max(minMapZoom, map.getZoom() + homeZoomOffset)
+      center: map.getCenter().toArray(),
+      zoom: map.getZoom()
     };
-    map.jumpTo(initialMapView);
   }
 
   function villageLngLat(village) {
