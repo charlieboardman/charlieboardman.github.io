@@ -82,10 +82,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   document.querySelector("#mobile-count").textContent = String(villages.length).padStart(2, "0");
 
   const mapDataBounds = { south: 34, west: 18, north: 43.5, east: 35 };
-  const navigationBounds = { south: 33, west: 16.5, north: 44, east: 37.5 };
-  const homeViewBounds = { south: 34.5, west: 19.5, north: 42.8, east: 34.7 };
+  const navigationBounds = { south: 33, west: 16, north: 44, east: 38 };
+  const homeViewBounds = { south: 34.3, west: 19.5, north: 43, east: 34.7 };
   const compactMapView = window.matchMedia("(max-width: 720px)").matches;
-  const minMapZoom = compactMapView ? 5 : 5.7;
+  const minMapZoom = compactMapView ? 5 : 5.6;
   const maxMapZoom = 11;
   const minimumMarkerDiameter = 9;
   const maximumMarkerDiameter = 18;
@@ -407,14 +407,15 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     const horizontalPadding = compactMapView ? 24 : 48;
     map.fitBounds(homeBounds, {
       padding: {
-        top: 20,
+        top: 32,
         right: horizontalPadding,
-        bottom: Math.ceil(els.regionTray.getBoundingClientRect().height) + 12,
+        bottom: Math.ceil(els.regionTray.getBoundingClientRect().height) + 24,
         left: horizontalPadding
       },
       duration: 0,
       retainPadding: false
     });
+    if (!compactMapView) map.setMinZoom(map.getZoom());
     initialMapView = {
       center: map.getCenter().toArray(),
       zoom: map.getZoom()
