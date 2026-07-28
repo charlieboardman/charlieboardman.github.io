@@ -84,6 +84,8 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const mapDataBounds = { south: 34, west: 18, north: 43.5, east: 34.5 };
   const minMapZoom = 5;
   const maxMapZoom = 11;
+  const homeZoomOffset = -1;
+  const homeLongitudeOffset = 1;
   const minimumMarkerDiameter = 9;
   const maximumMarkerDiameter = 18;
   const map = new MapLibreMap({
@@ -403,10 +405,12 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       duration: 0,
       retainPadding: false
     });
+    const fittedCenter = map.getCenter();
     initialMapView = {
-      center: map.getCenter().toArray(),
-      zoom: map.getZoom()
+      center: [fittedCenter.lng + homeLongitudeOffset, fittedCenter.lat],
+      zoom: Math.max(minMapZoom, map.getZoom() + homeZoomOffset)
     };
+    map.jumpTo(initialMapView);
   }
 
   function villageLngLat(village) {
