@@ -36,6 +36,8 @@ button { color: inherit; }
 }
 .brand { display: inline-flex; align-items: center; gap: 11px; color: inherit; width: max-content; }
 .brand-mark { display: grid; place-items: center; min-width: 56px; height: 30px; padding: 0 7px; border: 1px solid rgba(255,255,255,.55); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+.brand-home-button { background: transparent; color: inherit; cursor: pointer; transition: background .18s ease, border-color .18s ease; }
+.brand-home-button:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.8); }
 .brand-name { margin: 0; font-family: "Gloock", serif; font-size: 25px; font-weight: 400; letter-spacing: -.02em; white-space: nowrap; }
 .language-options { align-self: stretch; display: flex; margin-left: auto; border-right: 1px solid rgba(255,255,255,.2); border-left: 1px solid rgba(255,255,255,.2); }
 .language-button { position: relative; border: 0; border-left: 1px solid rgba(255,255,255,.14); padding: 0 17px; background: transparent; color: rgba(255,253,248,.72); cursor: pointer; font-size: 9px; font-weight: 500; transition: background .18s ease, color .18s ease; }
@@ -56,8 +58,6 @@ button { color: inherit; }
 
 .eyebrow { margin: 0 0 10px; color: #6e7d77; font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
 .region-tray { position: absolute; z-index: 11; left: 0; right: 0; bottom: 0; min-height: 31px; display: flex; align-items: stretch; background: rgba(243,239,231,.96); border-top: 1px solid rgba(23,39,37,.2); box-shadow: 0 -10px 35px rgba(19,43,38,.1); backdrop-filter: blur(10px); }
-.home-button { position: absolute; z-index: 11; left: 20px; top: 20px; display: flex; align-items: center; min-height: 42px; border: 1px solid rgba(23,39,37,.18); padding: 0 13px; background: rgba(243,239,231,.94); box-shadow: 0 7px 22px rgba(19,43,38,.11); backdrop-filter: blur(8px); color: #687772; cursor: pointer; font-size: 8px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; transition: background .18s ease, color .18s ease; }
-.home-button:hover { background: var(--ink); color: var(--white); }
 .region-list { min-width: 0; display: flex; flex: 1; flex-wrap: wrap; align-content: stretch; overflow: hidden; }
 .region-chip { position: relative; flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 88px; max-width: 100%; min-height: 30px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; padding: 3px 10px; background: transparent; cursor: pointer; transition: .2s ease; font-family: "DM Sans", sans-serif; font-size: 18px; font-weight: 500; line-height: 1; white-space: nowrap; }
 .region-chip.is-last-row { flex-grow: 0; }
@@ -152,7 +152,6 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
   .language-button.is-active::after { left: 7px; right: 7px; bottom: 6px; }
   .atlas { display: block; }
   .map-stage { height: calc(100vh - var(--header-height)); height: calc(100dvh - var(--header-height)); }
-  .home-button { left: 12px; top: 12px; min-height: 39px; padding: 0 10px; }
   .maplibregl-ctrl-attrib { max-width: calc(100vw - 10px); white-space: normal; font-size: 7px !important; line-height: 1.2; }
   .region-chip { padding-inline: 8px; }
   .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group { margin-right: 15px !important; }
