@@ -16,6 +16,15 @@ Tremouliastos
 
 Sfarlis
 
+### info_greek
+Κυνηγητός
+
+Καλλινίτικος
+
+Τρεμουλιαστός
+
+Σφαρλής
+
 ## Boyialiki
 greek_name=Μπογιαλίκι
 latitude=42.32
@@ -27,6 +36,13 @@ Troiro
 Sfarlis
 
 Mandilatos
+
+### info_greek
+Τροΐρω
+
+Σφαρλής
+
+Μαντηλάτος
 
 ## Kavakli
 greek_name=Καβακλί
@@ -41,6 +57,15 @@ Singathistos
 Zonaradikos
 
 Zervos
+
+### info_greek
+Τσέστος
+
+Συγκαθιστός
+
+Ζωναράδικος
+
+Ζερβός
 
 # Thrace <!-- often called Western Thrace -->
 greek_name=Θράκη
@@ -134,6 +159,17 @@ Rude Giagne
 
 Bukit Resivat
 
+### info_greek
+Γκάιντα
+
+Σουλεϊμάνοβο
+
+Μάρενα
+
+Ρούντο Γιάγκνε
+
+Μπούκιτε Ραζβίβατ
+
 ## Edessa
 greek_name=Έδεσσα
 latitude=40.801
@@ -141,6 +177,9 @@ longitude=22.05
 
 ### info
 Pousnitsa
+
+### info_greek
+Πουσνίτσα
 
 ## Episkopi
 greek_name=Επισκοπή
@@ -152,6 +191,11 @@ Baiduskino
 
 Patrounino
 
+### info_greek
+Μπαϊντούσκινο
+
+Πατρούνινο
+
 ## Promarhoi
 greek_name=Πρόμαχοι
 latitude=41.025
@@ -159,6 +203,9 @@ longitude=22.004
 
 ### info
 Marena
+
+### info_greek
+Μάρενα
 
 ## Orma
 greek_name=Όρμα
@@ -192,6 +239,9 @@ longitude=21.835
 ### info
 Poustseno
 
+### info_greek
+Πουστσένο
+
 # Macedonia, Central
 greek_name=Μακεδονία, Κεντρική
 color=#879f18
@@ -207,6 +257,13 @@ Lissavo
 Olymbia
 
 Gaida
+
+### info_greek
+Λισσάβω
+
+Ολυμπία
+
+Γκάιντα
 
 ## Naoussa
 greek_name=Νάουσα
@@ -392,6 +449,15 @@ Peristerouda
 
 Stella
 
+### info_greek
+Κατσιάμπα
+
+Τσουρναβίτκου
+
+Περιστερούδα
+
+Στέλλα
+
 ## Elatohori
 greek_name=Ελατοχώρι
 latitude=40.32
@@ -399,6 +465,9 @@ longitude=22.265
 
 ### info
 Tsamiko
+
+### info_greek
+Τσάμικο
 
 ## Toxo
 greek_name=Τόξο
@@ -470,6 +539,19 @@ Barbounaki
 
 Vlahopoules
 
+### info_greek
+Διβαράτικος
+
+Μπάλος
+
+Μέρμηγκας
+
+Μανέτας
+
+Μπαρμπουνάκι
+
+Βλαχοπούλες
+
 ## Kerkyra <!-- Corfu -->
 greek_name=Κέρκυρα
 latitude=39.591
@@ -510,6 +592,13 @@ Pidihtos Ballos
 
 Vlaha
 
+### info_greek
+Μπάλος
+
+Πηδηχτός Μπάλος
+
+Βλάχα
+
 ## Paros
 greek_name=Πάρος
 latitude=37.065
@@ -529,6 +618,9 @@ longitude=26.152
 
 ### info
 Ikariotiko
+
+### info_greek
+Ικαριώτικος
 
 # Sporades Islands
 greek_name=Σποράδες
@@ -571,6 +663,15 @@ Siganos
 Pentozali
 
 Maleviziotikos
+
+### info_greek
+Συρτός
+
+Σιγανός
+
+Πεντοζάλι
+
+Μαλεβιζιώτικος
 
 ## Rethimno
 greek_name=Ρέθυμνο

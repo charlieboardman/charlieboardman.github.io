@@ -32,7 +32,7 @@ export function parseDancesMarkdown(source) {
   const placeIds = new Set();
   let currentRegion = null;
   let currentVillage = null;
-  let inInfo = false;
+  let currentInfoLanguage = null;
   let infoFence = null;
 
   const finishVillage = () => {
@@ -61,7 +61,10 @@ export function parseDancesMarkdown(source) {
       name: currentVillage.name,
       names: { en: currentVillage.name, el: greekName },
       coordinates: [latitude, longitude],
-      info: currentVillage.infoLines.join("\n").trim()
+      info: {
+        en: currentVillage.infoLines.en.join("\n").trim(),
+        el: currentVillage.infoLines.el.join("\n").trim()
+      }
     };
 
     if (subregion) {
@@ -106,7 +109,7 @@ export function parseDancesMarkdown(source) {
         : { en: "", el: "" }
     });
     currentVillage = null;
-    inInfo = false;
+    currentInfoLanguage = null;
     infoFence = null;
   };
 
@@ -131,9 +134,9 @@ export function parseDancesMarkdown(source) {
   lines.forEach((rawLine, index) => {
     const lineNumber = index + 1;
     const line = rawLine;
-    if (inInfo) {
+    if (currentInfoLanguage) {
       if (infoFence) {
-        currentVillage.infoLines.push(line);
+        currentVillage.infoLines[currentInfoLanguage].push(line);
         const closingFence = /^\s{0,3}(`{3,}|~{3,})\s*$/u.exec(line);
         if (
           closingFence
@@ -151,7 +154,7 @@ export function parseDancesMarkdown(source) {
           character: openingFence[1][0],
           length: openingFence[1].length
         };
-        currentVillage.infoLines.push(line);
+        currentVillage.infoLines[currentInfoLanguage].push(line);
         return;
       }
     }
@@ -187,26 +190,38 @@ export function parseDancesMarkdown(source) {
         name: heading[2].trim(),
         line: lineNumber,
         _fields: new Map(),
-        infoLines: []
+        _infoSections: new Map(),
+        infoLines: { en: [], el: [] }
       };
       return;
     }
 
-    if (heading?.[1] === "###" && heading[2].trim().toLowerCase() === "info") {
+    const infoHeading = heading?.[1] === "###"
+      ? { info: "en", info_greek: "el" }[heading[2].trim().toLowerCase()]
+      : null;
+    if (infoHeading) {
       if (!currentVillage) fail("An info section must appear beneath a village heading.", lineNumber);
-      if (inInfo) fail("A village can only have one info section.", lineNumber);
-      inInfo = true;
+      const sectionName = infoHeading === "en" ? "info" : "info_greek";
+      if (currentVillage._infoSections.has(infoHeading)) {
+        fail(`A village can only have one ${sectionName} section.`, lineNumber);
+      }
+      currentVillage._infoSections.set(infoHeading, lineNumber);
+      currentInfoLanguage = infoHeading;
+      infoFence = null;
       return;
     }
 
-    if (inInfo) {
-      currentVillage.infoLines.push(line);
+    if (currentInfoLanguage) {
+      currentVillage.infoLines[currentInfoLanguage].push(line);
       return;
     }
 
     if (!line.trim()) return;
     if (heading) {
-      fail("Only region (#), village (##), and info (### info) headings are allowed here.", lineNumber);
+      fail(
+        "Only region (#), village (##), info (### info), and Greek info (### info_greek) headings are allowed here.",
+        lineNumber
+      );
     }
 
     const property = /^([a-z_]+)\s*=(.*)$/u.exec(line);

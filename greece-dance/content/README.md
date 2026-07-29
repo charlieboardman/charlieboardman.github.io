@@ -40,7 +40,10 @@ subregion=Agrafa
 subregion_greek_name=Άγραφα
 
 ### info
-Markdown about Argithea and its dances goes here.
+English Markdown about Argithea and its dances goes here.
+
+### info_greek
+Ελληνικό κείμενο Markdown για την Αργιθέα και τους χορούς της.
 ```
 
 Every village requires:
@@ -58,10 +61,18 @@ the same `subregion_greek_name` for each of them; validation rejects conflicting
 translations. Omit both subregion fields to place a village directly beneath its
 region.
 
-The optional `### info` section continues until the next village or region. Its
-body is Markdown and may contain paragraphs, links, lists, emphasis and
+The optional `### info` section contains the English village description. Add
+an optional `### info_greek` section for its Greek counterpart. Each section
+continues until the next localized info section, village, or region. Their
+bodies are independent Markdown: editing one does not translate or update the
+other automatically. If `info_greek` is absent or empty, the Greek interface
+falls back to `info`. Search checks both languages regardless of the currently
+selected interface language.
+
+Both bodies may contain paragraphs, links, lists, emphasis and
 level-four-or-deeper headings. Headings at any level inside fenced code blocks
-are treated as literal code rather than region or village records.
+are treated as literal code rather than region, village, or info records. A
+village may have at most one section of each kind.
 
 ## Comments
 

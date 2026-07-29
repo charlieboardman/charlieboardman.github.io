@@ -1,10 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { localizedName, sortRegionsAlphabetically } from "../region-presentation.js";
+import { localizedInfo, localizedName, sortRegionsAlphabetically } from "../region-presentation.js";
 
 test("localizedName uses the requested language with sensible fallbacks", () => {
   assert.equal(localizedName({ names: { en: "Thessaly", el: "Θεσσαλία" } }, "el"), "Θεσσαλία");
   assert.equal(localizedName({ names: { en: "Thessaly", el: "" } }, "el"), "Thessaly");
+});
+
+test("localizedInfo uses Greek when available and otherwise falls back to English", () => {
+  assert.equal(
+    localizedInfo({ info: { en: "English text", el: "Ελληνικό κείμενο" } }, "el"),
+    "Ελληνικό κείμενο"
+  );
+  assert.equal(localizedInfo({ info: { en: "English text", el: "" } }, "el"), "English text");
 });
 
 test("sortRegionsAlphabetically orders regions in the displayed language", () => {

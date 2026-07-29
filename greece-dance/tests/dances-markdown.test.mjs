@@ -16,6 +16,8 @@ test("the canonical Markdown remains valid as its content changes", async () => 
   assert.equal(atlas.places.length, hierarchyPlaces.length);
   assert.ok(atlas.regions.every((region) => region.names.en && region.names.el));
   assert.ok(atlas.places.every((place) => place.names.en && place.names.el));
+  assert.ok(atlas.places.every((place) => typeof place.info.en === "string"));
+  assert.ok(atlas.places.every((place) => typeof place.info.el === "string"));
   assert.equal(new Set(atlas.regions.map((region) => region.id)).size, atlas.regions.length);
   assert.equal(new Set(atlas.places.map((place) => place.id)).size, atlas.places.length);
   assert.doesNotMatch(source, /^(?:id|has_dance|kind|min_zoom|priority|order)=/mu);
@@ -45,7 +47,7 @@ Keep this <!-- remove the aside --> text.
 
   assert.equal(atlas.regions[0].name, "Test Region");
   assert.equal(
-    atlas.places[0].info,
+    atlas.places[0].info.en,
     "Visit https://example.com/path//segment\nKeep this  text."
   );
   assert.equal(stripComments("value <!-- note -->"), "value ");
@@ -87,8 +89,79 @@ After the code.
 
   assert.equal(atlas.regions.length, 1);
   assert.equal(atlas.places.length, 1);
-  assert.match(atlas.places[0].info, /^```md\n# This is not a region/mu);
-  assert.match(atlas.places[0].info, /After the code\.$/u);
+  assert.match(atlas.places[0].info.en, /^```md\n# This is not a region/mu);
+  assert.match(atlas.places[0].info.en, /After the code\.$/u);
+});
+
+test("English and Greek info sections are parsed independently", () => {
+  const atlas = parseDancesMarkdown(`
+# Test Region
+greek_name=Περιοχή
+color=#336699
+
+## Test Village
+greek_name=Χωριό
+latitude=40
+longitude=22
+
+### info
+English **description**
+
+### info_greek
+Ελληνική **περιγραφή**
+  `);
+
+  assert.deepEqual(atlas.places[0].info, {
+    en: "English **description**",
+    el: "Ελληνική **περιγραφή**"
+  });
+});
+
+test("duplicate localized info sections identify their line", () => {
+  const source = `# Test Region
+greek_name=Περιοχή
+color=#336699
+## Test Village
+greek_name=Χωριό
+latitude=40
+longitude=22
+### info_greek
+Πρώτο
+### info_greek
+Δεύτερο`;
+
+  assert.throws(
+    () => parseDancesMarkdown(source),
+    (error) => {
+      assert.ok(error instanceof DancesMarkdownError);
+      assert.equal(error.location, "dances.md, line 10");
+      assert.equal(error.message, "A village can only have one info_greek section.");
+      return true;
+    }
+  );
+});
+
+test("localized info headings inside fenced code remain content", () => {
+  const atlas = parseDancesMarkdown(`
+# Test Region
+greek_name=Περιοχή
+color=#336699
+## Test Village
+greek_name=Χωριό
+latitude=40
+longitude=22
+### info
+\`\`\`md
+### info_greek
+\`\`\`
+Still English.
+### info_greek
+Ελληνικά.
+  `);
+
+  assert.match(atlas.places[0].info.en, /### info_greek/u);
+  assert.match(atlas.places[0].info.en, /Still English\.$/u);
+  assert.equal(atlas.places[0].info.el, "Ελληνικά.");
 });
 
 test("subregion fields must be paired and consistently translated", () => {

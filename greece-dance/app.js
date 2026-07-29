@@ -1,5 +1,5 @@
 import { DancesMarkdownError, parseDancesMarkdown } from "./dances-markdown.js";
-import { localizedName, sortRegionsAlphabetically } from "./region-presentation.js";
+import { localizedInfo, localizedName, sortRegionsAlphabetically } from "./region-presentation.js";
 import {
   AttributionControl,
   LngLatBounds,
@@ -42,7 +42,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const villages = regions.flatMap((region) => [
     ...(region.villages || []).map((village) => ({
       ...village,
-      infoHtml: renderMarkdown(village.info),
       regionId: region.id,
       regionNames: region.names,
       regionColor: region.color,
@@ -52,7 +51,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     ...(region.subregions || []).flatMap((subregion) =>
       (subregion.villages || []).map((village) => ({
         ...village,
-        infoHtml: renderMarkdown(village.info),
         regionId: region.id,
         regionNames: region.names,
         regionColor: region.color,
@@ -524,7 +522,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       ...Object.values(village.names),
       ...Object.values(village.regionNames),
       ...Object.values(village.subregionNames),
-      village.info
+      ...Object.values(village.info)
     ]
       .filter(Boolean)
       .join(" ")
@@ -588,7 +586,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     els.villageDetail.innerHTML = `
       <button class="detail-back" type="button">← Back to village index</button>
       <h3 lang="${escapeAttribute(mapLanguage)}">${escapeHtml(villageLabel(village))}</h3>
-      <div class="detail-copy">${village.infoHtml}</div>
+      <div class="detail-copy" lang="${escapeAttribute(mapLanguage)}">${renderMarkdown(localizedInfo(village, mapLanguage))}</div>
     `;
     els.villageDetail.querySelector(".detail-back").addEventListener("click", showList);
   }
