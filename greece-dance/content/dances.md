@@ -8,11 +8,13 @@ latitude=42.775
 longitude=27.817
 
 ### info
-Dance 1
+Kiniyitos
 
-Dance 2
+Kallinitikos
 
-etc
+Tremouliastos
+
+Sfarlis
 
 ## Boyialiki
 greek_name=Μπογιαλίκι
@@ -20,11 +22,11 @@ latitude=42.32
 longitude=26.434
 
 ### info
-Dance 1
+Troiro
 
-Dance 2
+Sfarlis
 
-etc
+Mandilatos
 
 ## Kavakli
 greek_name=Καβακλί
@@ -32,11 +34,13 @@ latitude=42.085
 longitude=26.332
 
 ### info
-Dance 1
+Tsestos
 
-Dance 2
+Singathistos
 
-etc
+Zonaradikos
+
+Zervos
 
 # Thrace <!-- often called Western Thrace -->
 greek_name=Θράκη
@@ -120,11 +124,15 @@ latitude=40.976
 longitude=22.061
 
 ### info
-Dance 1
+Gaida
 
-Dance 2
+Soulemonovo
 
-etc
+Marena
+
+Rude Giagne
+
+Bukit Resivat
 
 ## Edessa
 greek_name=Έδεσσα
@@ -132,11 +140,7 @@ latitude=40.801
 longitude=22.05
 
 ### info
-Dance 1
-
-Dance 2
-
-etc
+Pousnitsa
 
 ## Promarhoi
 greek_name=Πρόμαχοι
@@ -144,11 +148,7 @@ latitude=41.025
 longitude=22.004
 
 ### info
-Dance 1
-
-Dance 2
-
-etc
+Marena
 
 ## Orma
 greek_name=Όρμα
@@ -180,11 +180,7 @@ latitude=40.798
 longitude=21.835
 
 ### info
-Dance 1
-
-Dance 2
-
-etc
+Poustseno
 
 # Macedonia, Central
 greek_name=Μακεδονία, Κεντρική
@@ -196,11 +192,11 @@ latitude=40.947
 longitude=22.452
 
 ### info
-Dance 1
+Lissavo
 
-Dance 2
+Olymbia
 
-etc
+Gaida
 
 ## Naoussa
 greek_name=Νάουσα
@@ -378,11 +374,13 @@ latitude=40.351
 longitude=22.212
 
 ### info
-Dance 1
+Katsiamba
 
-Dance 2
+Tsournavitiko
 
-etc
+Peristerouda
+
+Stella
 
 ## Elatohori
 greek_name=Ελατοχώρι
@@ -390,11 +388,7 @@ latitude=40.32
 longitude=22.265
 
 ### info
-Dance 1
-
-Dance 2
-
-etc
+Tsamiko
 
 ## Toxo
 greek_name=Τόξο
@@ -454,11 +448,17 @@ latitude=38.266
 longitude=20.537
 
 ### info
-Dance 1
+Divaratikos
 
-Dance 2
+Ballos
 
-etc
+Mermingas
+
+Manettas
+
+Barbounaki
+
+Vlahopoules
 
 ## Kerkyra <!-- Corfu -->
 greek_name=Κέρκυρα
@@ -494,11 +494,11 @@ latitude=37.06
 longitude=25.471
 
 ### info
-Dance 1
+Ballos
 
-Dance 2
+Pidihtos Ballos
 
-etc
+Vlaha
 
 ## Paros
 greek_name=Πάρος
@@ -518,11 +518,7 @@ latitude=37.6
 longitude=26.152
 
 ### info
-Dance 1
-
-Dance 2
-
-etc
+Ikariotiko
 
 # Sporades Islands
 greek_name=Σποράδες
@@ -558,11 +554,13 @@ latitude=35.512
 longitude=24.019
 
 ### info
-Dance 1
+Syrtos
 
-Dance 2
+Siganos
 
-etc
+Pentozali
+
+Maleviziotikos
 
 ## Rethimno
 greek_name=Ρέθυμνο
