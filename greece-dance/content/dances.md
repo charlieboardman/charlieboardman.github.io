@@ -142,6 +142,16 @@ longitude=22.05
 ### info
 Pousnitsa
 
+## Episkopi
+greek_name=Επισκοπή
+latitude=40.68769
+longitude=22.13735
+
+### info
+Baiduskino
+
+Patrounino
+
 ## Promarhoi
 greek_name=Πρόμαχοι
 latitude=41.025
