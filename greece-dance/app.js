@@ -264,6 +264,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     }
     const height = Math.ceil(els.regionTray.getBoundingClientRect().height);
     els.mapStage.style.setProperty("--region-tray-height", `${height}px`);
+    requestAnimationFrame(() => {
+      map.resize();
+      scheduleMapLabelLayout();
+    });
   }
 
   if ("ResizeObserver" in window) {
@@ -409,7 +413,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       padding: {
         top: 32,
         right: horizontalPadding,
-        bottom: Math.ceil(els.regionTray.getBoundingClientRect().height) + 24,
+        bottom: 24,
         left: horizontalPadding
       },
       duration: 0,
