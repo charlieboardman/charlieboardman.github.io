@@ -89,6 +89,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const navigationBounds = { south: 33, west: 16, north: 44, east: 38 };
   const homeViewBounds = expandedVillageBounds(villages);
   const compactMapView = window.matchMedia("(max-width: 720px)").matches;
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const markerScaleMinZoom = compactMapView ? 5 : 5.6;
   const maxMapZoom = 11;
   const minimumMarkerDiameter = 9;
@@ -426,6 +427,19 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     fitHomeView();
   }
 
+  function fitRegionView(regionId) {
+    const regionBounds = expandedVillageBounds(
+      villages.filter((village) => village.regionId === regionId)
+    );
+    if (!regionBounds) return;
+    map.fitBounds(regionBounds, {
+      padding: 0,
+      maxZoom: maxMapZoom,
+      duration: prefersReducedMotion ? 0 : 600,
+      retainPadding: false
+    });
+  }
+
   function villageLngLat(village) {
     return [village.coordinates[1], village.coordinates[0]];
   }
@@ -603,6 +617,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     });
     updateRegionMarkerColors();
     showList();
+    if (id) fitRegionView(id);
   }
 
   function goHome() {
