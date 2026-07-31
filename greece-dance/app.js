@@ -99,10 +99,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     zoom: 6,
     minZoom: 0,
     maxZoom: maxMapZoom,
-    maxBounds: [
-      [navigationBounds.west, navigationBounds.south],
-      [navigationBounds.east, navigationBounds.north]
-    ],
     attributionControl: false,
     renderWorldCopies: false,
     dragRotate: false,
@@ -401,6 +397,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   let hasFitInitialMapView = false;
   function fitHomeView() {
     if (!homeViewBounds) return;
+    map.setMaxBounds(null);
     map.setMinZoom(0);
     map.fitBounds(homeViewBounds, {
       padding: 0,
@@ -408,7 +405,18 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       duration: 0,
       retainPadding: false
     });
+    const fittedBounds = map.getBounds();
     map.setMinZoom(map.getZoom());
+    map.setMaxBounds([
+      [
+        Math.min(navigationBounds.west, fittedBounds.getWest()),
+        Math.min(navigationBounds.south, fittedBounds.getSouth())
+      ],
+      [
+        Math.max(navigationBounds.east, fittedBounds.getEast()),
+        Math.max(navigationBounds.north, fittedBounds.getNorth())
+      ]
+    ]);
     updateMarkerScale();
   }
 
