@@ -66,6 +66,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const villageById = new Map(villages.map((village) => [village.id, village]));
 
   const els = {
+    atlas: document.querySelector(".atlas"),
     mapStage: document.querySelector(".map-stage"),
     regionTray: document.querySelector(".region-tray"),
     regionList: document.querySelector("#region-list"),
@@ -75,6 +76,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     search: document.querySelector("#village-search"),
     archive: document.querySelector("#archive-panel"),
     mobileArchive: document.querySelector("#mobile-archive-button"),
+    desktopArchive: document.querySelector("#desktop-archive-toggle"),
     panelClose: document.querySelector("#panel-close"),
     homeButton: document.querySelector("#home-button"),
     languageOptions: document.querySelector("#language-options"),
@@ -665,16 +667,33 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   function syncArchiveAccessibility() {
     const isMobile = mobileArchiveMedia.matches;
-    const isOpen = isMobile && els.archive.classList.contains("is-open");
-    els.mobileArchive.setAttribute("aria-expanded", String(isOpen));
-    els.archive.inert = isMobile && !isOpen;
-    if (isMobile) els.archive.setAttribute("aria-hidden", String(!isOpen));
-    else els.archive.removeAttribute("aria-hidden");
+    const isMobileOpen = isMobile && els.archive.classList.contains("is-open");
+    const isDesktopCollapsed = !isMobile && els.atlas.classList.contains("is-archive-collapsed");
+    els.mobileArchive.setAttribute("aria-expanded", String(isMobileOpen));
+    els.desktopArchive.setAttribute("aria-expanded", String(!isDesktopCollapsed));
+    els.desktopArchive.setAttribute(
+      "aria-label",
+      isDesktopCollapsed ? "Expand village archive" : "Collapse village archive"
+    );
+    els.archive.inert = (isMobile && !isMobileOpen) || isDesktopCollapsed;
+    if ((isMobile && !isMobileOpen) || isDesktopCollapsed) {
+      els.archive.setAttribute("aria-hidden", "true");
+    } else {
+      els.archive.removeAttribute("aria-hidden");
+    }
   }
 
   function setArchiveOpen(open, { focusSearch = false, restoreFocus = false } = {}) {
-    if (mobileArchiveMedia.matches) els.archive.classList.toggle("is-open", open);
+    if (mobileArchiveMedia.matches) {
+      els.archive.classList.toggle("is-open", open);
+    } else {
+      els.atlas.classList.toggle("is-archive-collapsed", !open);
+    }
     syncArchiveAccessibility();
+    requestAnimationFrame(() => {
+      map.resize();
+      scheduleMapLabelLayout();
+    });
     if (open && focusSearch) requestAnimationFrame(() => els.search.focus());
     if (!open && restoreFocus) els.mobileArchive.focus();
   }
@@ -687,6 +706,9 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   els.search.addEventListener("input", showList);
   els.homeButton.addEventListener("click", goHome);
   els.mobileArchive.addEventListener("click", () => setArchiveOpen(true, { focusSearch: true }));
+  els.desktopArchive.addEventListener("click", () => {
+    setArchiveOpen(els.atlas.classList.contains("is-archive-collapsed"));
+  });
   els.panelClose.addEventListener("click", () => setArchiveOpen(false, { restoreFocus: true }));
   els.skipLink.addEventListener("click", (event) => {
     event.preventDefault();
