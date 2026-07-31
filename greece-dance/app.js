@@ -607,7 +607,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     els.villageDetail.querySelector(".detail-back").addEventListener("click", showList);
   }
 
-  function selectRegion(id) {
+  function setRegionSelection(id) {
     activeRegion = id;
     if (id) expandedRegions.add(id);
     els.regionList.querySelectorAll(".region-chip").forEach((chip) => {
@@ -616,6 +616,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       chip.setAttribute("aria-pressed", String(isActive));
     });
     updateRegionMarkerColors();
+  }
+
+  function selectRegion(id) {
+    setRegionSelection(id);
     showList();
     if (id) fitRegionView(id);
   }
@@ -639,6 +643,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   function selectVillage(id) {
     const village = villageById.get(id);
     if (!village) return;
+    if (activeRegion) setRegionSelection(null);
     if (activeVillage && activeVillage !== id) setMarkerState(activeVillage, false);
     activeVillage = id;
     setMarkerState(id, true);
