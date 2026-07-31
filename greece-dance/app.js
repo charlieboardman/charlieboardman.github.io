@@ -585,7 +585,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   function selectRegion(id) {
     activeRegion = id;
-    activeVillage = null;
     if (id) expandedRegions.add(id);
     els.regionList.querySelectorAll(".region-chip").forEach((chip) => {
       const isActive = chip.dataset.region === id;
@@ -615,6 +614,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   function selectVillage(id) {
     const village = villageById.get(id);
     if (!village) return;
+    if (activeVillage && activeVillage !== id) setMarkerState(activeVillage, false);
     activeVillage = id;
     setMarkerState(id, true);
     renderDetail(village);
