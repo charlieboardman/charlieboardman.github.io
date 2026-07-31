@@ -1,8 +1,12 @@
 import { DancesMarkdownError, parseDancesMarkdown } from "./dances-markdown.js";
-import { localizedInfo, localizedName, sortRegionsAlphabetically } from "./region-presentation.js";
+import {
+  expandedVillageBounds,
+  localizedInfo,
+  localizedName,
+  sortRegionsAlphabetically
+} from "./region-presentation.js";
 import {
   AttributionControl,
-  LngLatBounds,
   Map as MapLibreMap,
   Marker,
   NavigationControl,
@@ -81,9 +85,9 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   const mapDataBounds = { south: 34, west: 18, north: 43.5, east: 35 };
   const navigationBounds = { south: 33, west: 16, north: 44, east: 38 };
-  const homeViewBounds = { south: 34.3, west: 19.5, north: 43, east: 34.7 };
+  const homeViewBounds = expandedVillageBounds(villages);
   const compactMapView = window.matchMedia("(max-width: 720px)").matches;
-  const minMapZoom = compactMapView ? 5 : 5.6;
+  const markerScaleMinZoom = compactMapView ? 5 : 5.6;
   const maxMapZoom = 11;
   const minimumMarkerDiameter = 9;
   const maximumMarkerDiameter = 18;
@@ -91,7 +95,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     container: "map",
     center: [26.1, 39.25],
     zoom: 6,
-    minZoom: minMapZoom,
+    minZoom: 0,
     maxZoom: maxMapZoom,
     maxBounds: [
       [navigationBounds.west, navigationBounds.south],
@@ -198,10 +202,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       ]
     }
   });
-  let initialMapView = {
-    center: map.getCenter().toArray(),
-    zoom: map.getZoom()
-  };
   map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
   map.addControl(new AttributionControl({
     compact: false,
@@ -284,7 +284,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   let hasRenderedAtlas = false;
 
   function markerDiameterAtZoom(zoom) {
-    const progress = Math.max(0, Math.min(1, (zoom - minMapZoom) / (maxMapZoom - minMapZoom)));
+    const progress = Math.max(
+      0,
+      Math.min(1, (zoom - markerScaleMinZoom) / (maxMapZoom - markerScaleMinZoom))
+    );
     return minimumMarkerDiameter + (maximumMarkerDiameter - minimumMarkerDiameter) * progress;
   }
 
@@ -394,34 +397,23 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   scheduleMapLabelLayout();
 
   let hasFitInitialMapView = false;
-  function fitInitialMapView() {
-    if (hasFitInitialMapView || !villages.length) return;
-    hasFitInitialMapView = true;
-    const homeBounds = villages.reduce(
-      (bounds, village) => bounds.extend(villageLngLat(village)),
-      new LngLatBounds()
-    );
-    if (!compactMapView) {
-      homeBounds
-        .extend([homeViewBounds.west, homeViewBounds.south])
-        .extend([homeViewBounds.east, homeViewBounds.north]);
-    }
-    const horizontalPadding = compactMapView ? 24 : 48;
-    map.fitBounds(homeBounds, {
-      padding: {
-        top: 32,
-        right: horizontalPadding,
-        bottom: 24,
-        left: horizontalPadding
-      },
+  function fitHomeView() {
+    if (!homeViewBounds) return;
+    map.setMinZoom(0);
+    map.fitBounds(homeViewBounds, {
+      padding: 0,
+      maxZoom: maxMapZoom,
       duration: 0,
       retainPadding: false
     });
-    if (!compactMapView) map.setMinZoom(map.getZoom());
-    initialMapView = {
-      center: map.getCenter().toArray(),
-      zoom: map.getZoom()
-    };
+    map.setMinZoom(map.getZoom());
+    updateMarkerScale();
+  }
+
+  function fitInitialMapView() {
+    if (hasFitInitialMapView || !homeViewBounds) return;
+    hasFitInitialMapView = true;
+    fitHomeView();
   }
 
   function villageLngLat(village) {
@@ -606,7 +598,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   function goHome() {
     selectRegion(null);
-    map.jumpTo(initialMapView);
+    fitHomeView();
   }
 
   function updateRegionMarkerColors() {
