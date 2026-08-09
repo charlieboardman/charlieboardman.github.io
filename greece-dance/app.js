@@ -385,8 +385,14 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       .setLngLat(villageLngLat(village))
       .addTo(map);
     markerElement.addEventListener("click", () => selectVillage(village.id));
-    markerElement.addEventListener("mouseenter", () => setMarkerState(village.id, true));
-    markerElement.addEventListener("mouseleave", () => setMarkerState(village.id, isVillageExpandedAndVisible(village.id)));
+    markerElement.addEventListener("mouseenter", () => {
+      setMarkerHoverSuppressed(village.id, false);
+      setMarkerState(village.id, true);
+    });
+    markerElement.addEventListener("mouseleave", () => {
+      setMarkerHoverSuppressed(village.id, false);
+      setMarkerState(village.id, isVillageExpandedAndVisible(village.id));
+    });
     markerById.set(village.id, marker);
   });
   setMapLanguage(mapLanguage);
@@ -615,13 +621,17 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   function isVillageExpandedAndVisible(village) {
     const details = typeof village === "string"
-      ? [...els.villageList.querySelectorAll(".tree-village")]
-        .find((item) => item.dataset.village === village)
+      ? villageDetailsById(village)
       : village;
     if (!details?.open) return false;
     const region = details.closest(".tree-region");
     const subregion = details.closest(".tree-subregion");
     return Boolean(region?.open && (!subregion || subregion.open));
+  }
+
+  function villageDetailsById(id) {
+    return [...els.villageList.querySelectorAll(".tree-village")]
+      .find((item) => item.dataset.village === id);
   }
 
   function syncVillageMarkerStates(container) {
@@ -678,6 +688,15 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   function selectVillage(id) {
     const village = villageById.get(id);
     if (!village) return;
+    const details = villageDetailsById(id);
+    if (isVillageExpandedAndVisible(details)) {
+      if (activeRegion) setRegionSelection(null);
+      expandedVillages.delete(id);
+      details.open = false;
+      setMarkerState(id, false);
+      setMarkerHoverSuppressed(id, true);
+      return;
+    }
     if (activeRegion) setRegionSelection(null);
     els.search.value = "";
     expandedRegions.add(village.regionId);
@@ -689,15 +708,22 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     renderVillages();
     setArchiveOpen(true);
     requestAnimationFrame(() => {
-      const details = [...els.villageList.querySelectorAll(".tree-village")]
-        .find((item) => item.dataset.village === id);
-      details?.scrollIntoView({ block: "nearest" });
-      if (mobileArchiveMedia.matches) details?.querySelector(".tree-village-summary")?.focus();
+      const openedDetails = villageDetailsById(id);
+      openedDetails?.scrollIntoView({ block: "nearest" });
+      if (mobileArchiveMedia.matches) openedDetails?.querySelector(".tree-village-summary")?.focus();
     });
   }
 
   function setMarkerState(id, enabled) {
     markerById.get(id)?.getElement()?.querySelector(".village-marker")?.classList.toggle("is-active", enabled);
+  }
+
+  function setMarkerHoverSuppressed(id, suppressed) {
+    markerById
+      .get(id)
+      ?.getElement()
+      ?.querySelector(".village-marker")
+      ?.classList.toggle("is-hover-suppressed", suppressed);
   }
 
   function escapeHtml(value = "") {
