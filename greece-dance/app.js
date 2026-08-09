@@ -594,7 +594,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       <details class="tree-subregion" data-folder="${escapeAttribute(key)}"${isOpen ? " open" : ""}>
         <summary class="tree-summary tree-subregion-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
-          <span class="tree-swatch" aria-hidden="true"></span>
           <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
           <span class="tree-kind" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(interfaceLabel("subregion"))}</span>
           <span class="tree-count" aria-label="${subregion.villages.length} ${subregion.villages.length === 1 ? "village" : "villages"}">${subregion.villages.length}</span>
