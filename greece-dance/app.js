@@ -81,7 +81,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     skipLink: document.querySelector(".skip-link"),
     villageInfoPopup: document.querySelector("#village-info-popup"),
     villageInfoClose: document.querySelector("#village-info-close"),
-    villageInfoKind: document.querySelector("#village-info-kind"),
     villageInfoTitle: document.querySelector("#village-info-title"),
     villageInfoLocation: document.querySelector("#village-info-location"),
     villageInfoCopy: document.querySelector("#village-info-copy")
@@ -215,10 +214,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const supportedLanguages = ["en", "el"];
   const interfaceLabels = {
     deselectAll: { en: "Deselect all", el: "Αποεπιλογή όλων" },
-    closeVillageInfo: { en: "Close village information", el: "Κλείσιμο πληροφοριών χωριού" },
-    region: { en: "Region", el: "Περιοχή" },
-    subregion: { en: "Subregion", el: "Υποπεριοχή" },
-    village: { en: "Village", el: "Χωριό" }
+    closeVillageInfo: { en: "Close village information", el: "Κλείσιμο πληροφοριών χωριού" }
   };
   let mapLanguage = "en";
   try {
@@ -561,8 +557,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   }
 
   function renderRegionTree(region, searching) {
-    const count = region.villages.length
-      + region.subregions.reduce((total, subregion) => total + subregion.villages.length, 0);
     const isOpen = searching
       || expandedRegions.has(region.id)
       || mapOpenedRegions.has(region.id);
@@ -571,10 +565,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       <details class="tree-region" data-folder="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}"${isOpen ? " open" : ""}>
         <summary class="tree-summary tree-region-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
-          <span class="tree-swatch" aria-hidden="true"></span>
           <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
-          <span class="tree-kind" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(interfaceLabel("region"))}</span>
-          <span class="tree-count" aria-label="${count} ${count === 1 ? "village" : "villages"}">${count}</span>
           <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
         </summary>
         <div class="tree-region-children">
@@ -595,8 +586,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
         <summary class="tree-summary tree-subregion-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
-          <span class="tree-kind" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(interfaceLabel("subregion"))}</span>
-          <span class="tree-count" aria-label="${subregion.villages.length} ${subregion.villages.length === 1 ? "village" : "villages"}">${subregion.villages.length}</span>
           <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" data-subregion="${escapeAttribute(subregion.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
         </summary>
         <div class="tree-villages">${subregion.villages.map(renderVillageRow).join("") || '<p class="tree-empty">No village records yet</p>'}</div>
@@ -611,7 +600,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
         <button class="tree-village-open" type="button" aria-haspopup="dialog" aria-controls="village-info-popup">
           <span class="tree-village-dot" aria-hidden="true"></span>
           <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
-          <span class="tree-kind" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(interfaceLabel("village"))}</span>
         </button>
         <button class="tree-zoom" type="button" data-village="${escapeAttribute(village.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
       </div>
@@ -736,8 +724,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       localizedName({ names: village.subregionNames }, mapLanguage),
       localizedName({ names: village.regionNames }, mapLanguage)
     ].filter(Boolean).join(" · ");
-    els.villageInfoKind.textContent = interfaceLabel("village");
-    els.villageInfoKind.lang = mapLanguage;
     els.villageInfoTitle.textContent = villageLabel(village);
     els.villageInfoTitle.lang = mapLanguage;
     els.villageInfoLocation.textContent = location;
