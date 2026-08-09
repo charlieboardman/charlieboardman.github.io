@@ -55,7 +55,7 @@ button { color: inherit; }
 .maplibregl-ctrl-attrib a { color: #314d47 !important; }
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group { border: 0 !important; box-shadow: 0 4px 18px rgba(23,39,37,.14) !important; margin: 0 22px 25px 0 !important; }
 .maplibregl-ctrl-group button { width: 38px !important; height: 38px !important; border: 0 !important; background-color: var(--paper) !important; color: var(--ink) !important; }
-.village-info-popup { position: absolute; z-index: 15; inset: 18px; display: flex; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid rgba(23,39,37,.28); background: var(--paper); box-shadow: 0 18px 55px rgba(23,39,37,.3); }
+.village-info-popup { position: absolute; z-index: 15; inset: 18px 40px 18px 18px; display: flex; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid rgba(23,39,37,.28); background: var(--paper); box-shadow: 0 18px 55px rgba(23,39,37,.3); }
 .village-info-popup[hidden] { display: none; }
 .village-info-close { position: absolute; z-index: 1; top: 18px; right: 18px; display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--line); padding: 0 0 2px; background: var(--paper); color: var(--ink); font-size: 25px; font-weight: 400; line-height: 1; cursor: pointer; transition: background .16s ease, color .16s ease, border-color .16s ease; }
 .village-info-close:hover { border-color: var(--ink); background: var(--ink); color: var(--white); }
