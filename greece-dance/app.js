@@ -67,9 +67,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   const els = {
     atlas: document.querySelector(".atlas"),
-    mapStage: document.querySelector(".map-stage"),
-    regionTray: document.querySelector(".region-tray"),
-    regionList: document.querySelector("#region-list"),
     villageList: document.querySelector("#village-list"),
     panelTitle: document.querySelector("#panel-title"),
     search: document.querySelector("#village-search"),
@@ -237,8 +234,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       }
     });
     if (hasRenderedAtlas) {
-      renderRegions();
-      updatePanelTitle();
       renderVillages(els.search.value);
     }
     scheduleMapLabelLayout();
@@ -249,30 +244,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     button.addEventListener("click", () => setMapLanguage(button.dataset.language));
   });
 
-  function updateRegionTrayHeight() {
-    const chips = [...els.regionList.querySelectorAll(".region-chip")];
-    chips.forEach((chip) => chip.classList.remove("is-last-row"));
-    if (chips.length) {
-      const lastRowTop = Math.max(...chips.map((chip) => chip.offsetTop));
-      chips
-        .filter((chip) => chip.offsetTop === lastRowTop)
-        .forEach((chip) => chip.classList.add("is-last-row"));
-    }
-    const height = Math.ceil(els.regionTray.getBoundingClientRect().height);
-    els.mapStage.style.setProperty("--region-tray-height", `${height}px`);
-    requestAnimationFrame(() => {
-      map.resize();
-      scheduleMapLabelLayout();
-    });
-  }
-
-  if ("ResizeObserver" in window) {
-    new ResizeObserver(updateRegionTrayHeight).observe(els.regionTray);
-  } else {
-    window.addEventListener("resize", updateRegionTrayHeight);
-  }
-  updateRegionTrayHeight();
-
   const markerById = new Map();
   const expandedRegions = new Set();
   const expandedSubregions = new Set();
@@ -281,8 +252,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const mapOpenedRegions = new Map();
   const mapOpenedSubregions = new Map();
   const mapOpenedVillages = new Map();
-  let activeRegion = null;
-  let hoveredRegion = null;
+  let hoveredTreeFolder = null;
   let hasRenderedAtlas = false;
 
   function markerDiameterAtZoom(zoom) {
@@ -436,12 +406,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     fitHomeView();
   }
 
-  function fitRegionView(regionId) {
-    const regionBounds = expandedVillageBounds(
-      villages.filter((village) => village.regionId === regionId)
-    );
-    if (!regionBounds) return;
-    map.fitBounds(regionBounds, {
+  function fitMapToVillages(targetVillages) {
+    const bounds = expandedVillageBounds(targetVillages);
+    if (!bounds) return;
+    map.fitBounds(bounds, {
       padding: 0,
       maxZoom: maxMapZoom,
       duration: prefersReducedMotion ? 0 : 600,
@@ -449,41 +417,31 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     });
   }
 
-  function villageLngLat(village) {
-    return [village.coordinates[1], village.coordinates[0]];
+  function zoomToTreeItem(button) {
+    const regionId = button.dataset.region;
+    const subregionId = button.dataset.subregion;
+    const villageId = button.dataset.village;
+    const targetVillages = villages.filter((village) => {
+      if (villageId) return village.id === villageId;
+      if (subregionId) {
+        return village.regionId === regionId && village.subregionId === subregionId;
+      }
+      return village.regionId === regionId;
+    });
+    fitMapToVillages(targetVillages);
   }
 
-  function renderRegions() {
-    hoveredRegion = null;
-    els.regionList.innerHTML = `
-      ${regions.map((region) => {
-        const isActive = activeRegion === region.id;
-        const label = regionLabel(region);
-        return `<button class="region-chip${isActive ? " is-active" : ""}" data-region="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}" title="${escapeAttribute(label)}" aria-pressed="${isActive}"><span class="region-chip-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span></button>`;
-      }).join("")}
-    `;
-    els.regionList.querySelectorAll(".region-chip").forEach((button) => {
-      const id = button.dataset.region;
-      button.addEventListener("mouseenter", () => {
-        hoveredRegion = id;
-        updateRegionMarkerColors();
-      });
-      button.addEventListener("mouseleave", () => {
-        hoveredRegion = null;
-        updateRegionMarkerColors();
-      });
-      button.addEventListener("click", () => selectRegion(activeRegion === id ? null : id));
-    });
-    updateRegionMarkerColors();
-    requestAnimationFrame(updateRegionTrayHeight);
+  function villageLngLat(village) {
+    return [village.coordinates[1], village.coordinates[0]];
   }
 
   function showContentError(error) {
     const isDancesError = error instanceof DancesMarkdownError;
     const location = isDancesError && error.location ? `${error.location}: ` : "";
     els.panelTitle.textContent = "Atlas content error";
+    els.panelTitle.hidden = false;
+    els.archive.classList.add("has-panel-title");
     els.search.disabled = true;
-    els.regionList.innerHTML = "";
     els.villageList.innerHTML = `
       <section class="content-error" role="alert">
         <p class="content-error-label">Could not read content/dances.md</p>
@@ -498,7 +456,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   function renderVillages(query = "") {
     const normalized = query.trim().toLowerCase();
     const visibleRegions = regions
-      .filter((region) => !activeRegion || region.id === activeRegion)
       .map((region) => filterRegion(region, normalized))
       .filter(Boolean);
 
@@ -506,6 +463,8 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       ? visibleRegions.map((region) => renderRegionTree(region, Boolean(normalized))).join("")
       : `<p class="empty-state">No village records match that search.</p>`;
 
+    hoveredTreeFolder = null;
+    updateTreeFolderMarkerColors();
     els.villageList.querySelectorAll(".tree-village").forEach((details) => {
       const id = details.dataset.village;
       const summary = details.querySelector(".tree-village-summary");
@@ -515,15 +474,30 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       summary.addEventListener("mouseleave", () => setMarkerState(id, isVillageHighlightedAndVisible(details)));
     });
     els.villageList.querySelectorAll(".tree-region").forEach((details) => {
+      const summary = details.querySelector(":scope > .tree-region-summary");
+      const folder = details.dataset.folder;
       details.addEventListener("toggle", () => syncVillageMarkerStates(details));
-      details.querySelector(":scope > .tree-region-summary").addEventListener("click", () => {
+      summary.addEventListener("click", () => {
         updateCaretStateFromUser(details, expandedRegions, mapOpenedRegions, Boolean(normalized));
       });
+      summary.addEventListener("mouseenter", () => setHoveredTreeFolder(folder));
+      summary.addEventListener("mouseleave", () => clearHoveredTreeFolder(folder));
     });
     els.villageList.querySelectorAll(".tree-subregion").forEach((details) => {
+      const summary = details.querySelector(":scope > .tree-subregion-summary");
+      const folder = details.dataset.folder;
       details.addEventListener("toggle", () => syncVillageMarkerStates(details));
-      details.querySelector(":scope > .tree-subregion-summary").addEventListener("click", () => {
+      summary.addEventListener("click", () => {
         updateCaretStateFromUser(details, expandedSubregions, mapOpenedSubregions, Boolean(normalized));
+      });
+      summary.addEventListener("mouseenter", () => setHoveredTreeFolder(folder));
+      summary.addEventListener("mouseleave", () => clearHoveredTreeFolder(folder));
+    });
+    els.villageList.querySelectorAll(".tree-zoom").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        zoomToTreeItem(button);
       });
     });
     syncVillageMarkerStates(els.villageList);
@@ -569,16 +543,17 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     const count = region.villages.length
       + region.subregions.reduce((total, subregion) => total + subregion.villages.length, 0);
     const isOpen = searching
-      || activeRegion === region.id
       || expandedRegions.has(region.id)
       || mapOpenedRegions.has(region.id);
+    const label = regionLabel(region);
     return `
       <details class="tree-region" data-folder="${escapeAttribute(region.id)}" style="--region-color:${escapeAttribute(region.color)}"${isOpen ? " open" : ""}>
         <summary class="tree-summary tree-region-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-swatch" aria-hidden="true"></span>
-          <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(regionLabel(region))}</span>
+          <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
           <span class="tree-count" aria-label="${count} ${count === 1 ? "village" : "villages"}">${count}</span>
+          <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" aria-label="Zoom map to ${escapeAttribute(label)}">Zoom</button>
         </summary>
         <div class="tree-region-children">
           ${region.villages.length ? `<div class="tree-region-villages">${region.villages.map(renderVillageRow).join("")}</div>` : ""}
@@ -592,12 +567,14 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   function renderSubregionTree(region, subregion, searching) {
     const key = `${region.id}/${subregion.id}`;
     const isOpen = searching || expandedSubregions.has(key) || mapOpenedSubregions.has(key);
+    const label = subregionLabel(subregion);
     return `
       <details class="tree-subregion" data-folder="${escapeAttribute(key)}"${isOpen ? " open" : ""}>
         <summary class="tree-summary tree-subregion-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
-          <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(subregionLabel(subregion))}</span>
+          <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
           <span class="tree-count" aria-label="${subregion.villages.length} ${subregion.villages.length === 1 ? "village" : "villages"}">${subregion.villages.length}</span>
+          <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" data-subregion="${escapeAttribute(subregion.id)}" aria-label="Zoom map to ${escapeAttribute(label)}">Zoom</button>
         </summary>
         <div class="tree-villages">${subregion.villages.map(renderVillageRow).join("") || '<p class="tree-empty">No village records yet</p>'}</div>
       </details>
@@ -606,12 +583,14 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   function renderVillageRow(village) {
     const isOpen = expandedVillages.has(village.id) || mapOpenedVillages.has(village.id);
+    const label = villageLabel(village);
     return `
       <details class="tree-village" data-village="${escapeAttribute(village.id)}"${isOpen ? " open" : ""}>
         <summary class="tree-summary tree-village-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-village-dot" aria-hidden="true"></span>
-          <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(villageLabel(village))}</span>
+          <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
+          <button class="tree-zoom" type="button" data-village="${escapeAttribute(village.id)}" aria-label="Zoom map to ${escapeAttribute(label)}">Zoom</button>
         </summary>
         <div class="tree-village-detail detail-copy" lang="${escapeAttribute(mapLanguage)}">${renderMarkdown(localizedInfo(village, mapLanguage))}</div>
       </details>
@@ -677,6 +656,33 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     });
   }
 
+  function setHoveredTreeFolder(folder) {
+    hoveredTreeFolder = folder;
+    updateTreeFolderMarkerColors();
+  }
+
+  function clearHoveredTreeFolder(folder) {
+    if (hoveredTreeFolder !== folder) return;
+    hoveredTreeFolder = null;
+    updateTreeFolderMarkerColors();
+  }
+
+  function updateTreeFolderMarkerColors() {
+    const [regionId, subregionId] = hoveredTreeFolder?.split("/") || [];
+    markerById.forEach((marker, villageId) => {
+      const village = villageById.get(villageId);
+      const isHighlighted = Boolean(
+        regionId
+        && village.regionId === regionId
+        && (!subregionId || village.subregionId === subregionId)
+      );
+      marker
+        .getElement()
+        ?.querySelector(".village-marker")
+        ?.classList.toggle("is-region-highlighted", isHighlighted);
+    });
+  }
+
   function addMapCaretOwner(state, key, villageId) {
     if (!state.has(key)) state.set(key, new Set());
     state.get(key).add(villageId);
@@ -713,49 +719,9 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     removeMapCaretOwner(mapOpenedVillages, village.id, village.id);
   }
 
-  function updatePanelTitle() {
-    const selectedRegion = activeRegion
-      ? regions.find((region) => region.id === activeRegion)
-      : null;
-    const panelTitle = selectedRegion ? regionLabel(selectedRegion) : "";
-    els.panelTitle.textContent = panelTitle;
-    els.panelTitle.lang = mapLanguage;
-    els.panelTitle.hidden = !panelTitle;
-    els.archive.classList.toggle("has-panel-title", Boolean(panelTitle));
-  }
-
-  function setRegionSelection(id) {
-    activeRegion = id;
-    if (id) expandedRegions.add(id);
-    els.regionList.querySelectorAll(".region-chip").forEach((chip) => {
-      const isActive = chip.dataset.region === id;
-      chip.classList.toggle("is-active", isActive);
-      chip.setAttribute("aria-pressed", String(isActive));
-    });
-    updatePanelTitle();
-    updateRegionMarkerColors();
-  }
-
-  function selectRegion(id) {
-    setRegionSelection(id);
-    showList();
-    if (id) fitRegionView(id);
-  }
-
   function goHome() {
-    selectRegion(null);
+    showList();
     fitHomeView();
-  }
-
-  function updateRegionMarkerColors() {
-    const highlightedRegion = hoveredRegion || activeRegion;
-    markerById.forEach((marker, villageId) => {
-      const village = villageById.get(villageId);
-      marker
-        .getElement()
-        ?.querySelector(".village-marker")
-        ?.classList.toggle("is-region-highlighted", village.regionId === highlightedRegion);
-    });
   }
 
   function selectVillage(id) {
@@ -763,7 +729,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     if (!village) return;
     const details = villageDetailsById(id);
     if (isVillageHighlightedAndVisible(details)) {
-      if (activeRegion) setRegionSelection(null);
       highlightedVillages.delete(id);
       removeMapVillagePath(village);
       renderVillages(els.search.value);
@@ -771,7 +736,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       setMarkerHoverSuppressed(id, true);
       return;
     }
-    if (activeRegion) setRegionSelection(null);
     els.search.value = "";
     highlightedVillages.add(id);
     addMapVillagePath(village);
@@ -890,7 +854,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   if (contentError) showContentError(contentError);
   else {
-    renderRegions();
     renderVillages();
     hasRenderedAtlas = true;
   }

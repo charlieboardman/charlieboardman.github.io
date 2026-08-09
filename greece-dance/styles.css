@@ -9,7 +9,6 @@
   --line: rgba(23, 39, 37, 0.17);
   --panel-width: 410px;
   --header-height: 58px;
-  --region-tray-height: 31px;
 }
 
 * { box-sizing: border-box; }
@@ -49,8 +48,8 @@ button { color: inherit; }
 .atlas { height: calc(100vh - var(--header-height)); height: calc(100dvh - var(--header-height)); min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-width); overflow: hidden; }
 .atlas.is-archive-collapsed { grid-template-columns: minmax(0, 1fr) 0; }
 .map-stage { position: relative; min-width: 0; background: #cfdbd3; overflow: hidden; }
-#map { position: absolute; inset: 0 0 var(--region-tray-height); z-index: 1; background: #ccd9d1; }
-.map-wash { position: absolute; inset: 0 0 var(--region-tray-height); z-index: 2; pointer-events: none; box-shadow: inset 0 0 100px rgba(14, 35, 31, .17); mix-blend-mode: multiply; }
+#map { position: absolute; inset: 0; z-index: 1; background: #ccd9d1; }
+.map-wash { position: absolute; inset: 0; z-index: 2; pointer-events: none; box-shadow: inset 0 0 100px rgba(14, 35, 31, .17); mix-blend-mode: multiply; }
 .maplibregl-map { font-family: "DM Sans", sans-serif; }
 .maplibregl-ctrl-attrib { margin-bottom: 0 !important; background: rgba(243,239,231,.82) !important; color: #53635f !important; font-size: 9px !important; }
 .maplibregl-ctrl-attrib a { color: #314d47 !important; }
@@ -58,16 +57,7 @@ button { color: inherit; }
 .maplibregl-ctrl-group button { width: 38px !important; height: 38px !important; border: 0 !important; background-color: var(--paper) !important; color: var(--ink) !important; }
 
 .eyebrow { margin: 0 0 10px; color: #6e7d77; font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
-.region-tray { position: absolute; z-index: 11; left: 0; right: 0; bottom: 0; min-height: 31px; display: flex; align-items: stretch; background: rgba(243,239,231,.96); border-top: 1px solid rgba(23,39,37,.2); box-shadow: 0 -10px 35px rgba(19,43,38,.1); backdrop-filter: blur(10px); }
-.region-list { min-width: 0; display: flex; flex: 1; flex-wrap: wrap; align-content: stretch; overflow: hidden; }
-.region-chip { position: relative; flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 88px; max-width: 100%; min-height: 30px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; padding: 3px 10px; background: transparent; cursor: pointer; transition: .2s ease; font-family: "DM Sans", sans-serif; font-size: 18px; font-weight: 500; line-height: 1; white-space: nowrap; }
-.region-chip.is-last-row { flex-grow: 0; }
-.region-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.region-chip::before { content: ""; width: 8px; height: 8px; background: var(--region-color); border-radius: 50%; box-shadow: 0 0 0 3px color-mix(in srgb, var(--region-color) 18%, transparent); }
-.region-chip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--region-color); transform: scaleX(0); transition: transform .2s ease; }
-.region-chip:hover, .region-chip.is-active { background: var(--ink); color: var(--white); }
-.region-chip:hover::after, .region-chip.is-active::after { transform: scaleX(1); }
-.region-chip:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
 .village-icon { width: 18px; height: 18px; overflow: visible !important; border: 0; padding: 0; background: transparent; cursor: pointer; }
 .village-marker-shell { position: relative; display: block; width: 18px; height: 18px; }
 .village-marker-scale { position: absolute; inset: 0; transform: scale(var(--marker-scale, .5)); transform-origin: center; transition: transform .18s ease; }
@@ -96,8 +86,8 @@ button { color: inherit; }
 .tree-region { border-bottom: 1px solid var(--line); }
 .tree-summary { display: grid; align-items: center; width: 100%; list-style: none; cursor: pointer; user-select: none; }
 .tree-summary::-webkit-details-marker { display: none; }
-.tree-region-summary { grid-template-columns: 16px 9px minmax(0, 1fr) 28px; gap: 10px; min-height: 52px; padding: 12px 3px 12px 0; font: 500 18px/1 "DM Sans", sans-serif; }
-.tree-subregion-summary { grid-template-columns: 16px minmax(0, 1fr) 28px; gap: 8px; min-height: 43px; padding: 9px 3px 9px 18px; border-top: 1px solid rgba(23,39,37,.1); color: #44534f; font: 500 18px/1 "DM Sans", sans-serif; }
+.tree-region-summary { grid-template-columns: 16px 9px minmax(0, 1fr) 28px auto; gap: 9px; min-height: 52px; padding: 12px 3px 12px 0; font: 500 18px/1 "DM Sans", sans-serif; }
+.tree-subregion-summary { grid-template-columns: 16px minmax(0, 1fr) 28px auto; gap: 8px; min-height: 43px; padding: 9px 3px 9px 18px; border-top: 1px solid rgba(23,39,37,.1); color: #44534f; font: 500 18px/1 "DM Sans", sans-serif; }
 .tree-summary:hover { background: rgba(255,255,255,.32); }
 .tree-summary:focus-visible { outline: 2px solid var(--coral); outline-offset: -2px; }
 .tree-chevron { color: #71807a; font-size: 18px; font-weight: 400; line-height: 1; transform-origin: center; transition: transform .16s ease; }
@@ -113,9 +103,11 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 .tree-villages .tree-village { width: calc(100% - 12px); margin-left: 12px; }
 .tree-village::before { content: ""; position: absolute; left: -19px; top: 7px; bottom: 7px; width: 2px; background: var(--region-color); opacity: 0; transition: opacity .16s ease; }
 .tree-village:hover::before, .tree-village[open]::before { opacity: 1; }
-.tree-village-summary { grid-template-columns: 16px 8px minmax(0, 1fr); gap: 8px; min-height: 44px; padding: 7px 3px 7px 0; text-align: left; }
+.tree-village-summary { grid-template-columns: 16px 8px minmax(0, 1fr) auto; gap: 8px; min-height: 44px; padding: 7px 3px 7px 0; text-align: left; }
 .tree-village-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--region-color); }
 .village-name { min-width: 0; font: 500 18px/1 "DM Sans", sans-serif; overflow-wrap: anywhere; }
+.tree-zoom { align-self: center; justify-self: end; border: 1px solid rgba(23,39,37,.28); padding: 5px 6px 4px; background: transparent; color: #63716c; font-size: 8px; font-weight: 600; line-height: 1; letter-spacing: .09em; text-transform: uppercase; cursor: zoom-in; transition: background .16s ease, border-color .16s ease, color .16s ease; }
+.tree-zoom:hover { border-color: var(--ink); background: var(--ink); color: var(--white); }
 .tree-village-detail { padding: 3px 3px 20px 32px; }
 .tree-empty { margin: 0; padding: 12px 0 14px 34px; color: #7a8782; font-size: 10px; }
 .empty-state { padding: 40px 0; color: #74807b; text-align: center; font-size: 12px; }
@@ -157,9 +149,8 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
   .atlas { display: block; }
   .map-stage { height: calc(100vh - var(--header-height)); height: calc(100dvh - var(--header-height)); }
   .maplibregl-ctrl-attrib { max-width: calc(100vw - 10px); white-space: normal; font-size: 7px !important; line-height: 1.2; }
-  .region-chip { padding-inline: 8px; }
-  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group { margin-right: 15px !important; }
-  .mobile-archive-button { display: flex; position: absolute; z-index: 12; right: 15px; bottom: calc(var(--region-tray-height) + 12px); align-items: center; gap: 17px; border: 0; padding: 13px 15px; background: var(--ink); color: var(--white); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; box-shadow: 0 8px 24px rgba(23,39,37,.24); cursor: pointer; }
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group { margin: 0 15px 76px 0 !important; }
+  .mobile-archive-button { display: flex; position: absolute; z-index: 12; right: 15px; bottom: 12px; align-items: center; gap: 17px; border: 0; padding: 13px 15px; background: var(--ink); color: var(--white); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; box-shadow: 0 8px 24px rgba(23,39,37,.24); cursor: pointer; }
   .mobile-archive-button span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--coral); }
   .desktop-archive-toggle { display: none; }
   .archive-panel { position: fixed; z-index: 1500; left: 0; right: 0; bottom: 0; height: min(78vh, 720px); height: min(78dvh, 720px); border-left: 0; border-top: 1px solid var(--line); transform: translateY(102%); visibility: hidden; pointer-events: none; transition: transform .35s cubic-bezier(.76,0,.24,1), visibility 0s linear .35s; box-shadow: 0 -20px 50px rgba(23,39,37,.2); }
