@@ -6,6 +6,7 @@ import {
   sortRegionsAlphabetically
 } from "./region-presentation.js";
 import {
+  AttributionControl,
   Map as MapLibreMap,
   Marker,
   NavigationControl,
@@ -87,19 +88,8 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   document.querySelector("#mobile-count").textContent = String(villages.length).padStart(2, "0");
 
-  const naturalEarthBasemap = {
-    url: new URL(
-      "./assets/basemaps/natural-earth-1/natural-earth-1-17e-38e-34n-44n.webp",
-      import.meta.url
-    ).href,
-    coordinates: [
-      [17, 44],
-      [38, 44],
-      [38, 34],
-      [17, 34]
-    ]
-  };
-  const navigationBounds = { south: 34, west: 17, north: 44, east: 38 };
+  const mapDataBounds = { south: 34, west: 18, north: 43.5, east: 35 };
+  const navigationBounds = { south: 33, west: 16, north: 44, east: 38 };
   const homeViewBounds = expandedVillageBounds(villages);
   const compactMapView = window.matchMedia("(max-width: 720px)").matches;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -119,29 +109,106 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     pitchWithRotate: false,
     style: {
       version: 8,
+      glyphs: "https://vector.openstreetmap.org/styles/shortbread/fonts/{fontstack}/{range}.pbf",
       sources: {
-        "natural-earth": {
-          type: "image",
-          url: naturalEarthBasemap.url,
-          coordinates: naturalEarthBasemap.coordinates
+        shortbread: {
+          type: "vector",
+          tiles: ["https://vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt"],
+          minzoom: 0,
+          maxzoom: 14,
+          bounds: [mapDataBounds.west, mapDataBounds.south, mapDataBounds.east, mapDataBounds.north],
+          attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a>'
         }
       },
       layers: [
         {
-          id: "basemap-background",
+          id: "land-background",
           type: "background",
-          paint: { "background-color": "#c9ddeb" }
+          paint: { "background-color": "#d6e7cf" }
         },
         {
-          id: "natural-earth-basemap",
-          type: "raster",
-          source: "natural-earth",
-          paint: { "raster-resampling": "linear" }
+          id: "ocean",
+          type: "fill",
+          source: "shortbread",
+          "source-layer": "ocean",
+          paint: { "fill-color": "#b9d7e8" }
+        },
+        {
+          id: "inland-water",
+          type: "fill",
+          source: "shortbread",
+          "source-layer": "water_polygons",
+          paint: {
+            "fill-color": "#b9d7e8",
+            "fill-outline-color": "#a8c8da"
+          }
+        },
+        {
+          id: "internal-boundaries",
+          type: "line",
+          source: "shortbread",
+          "source-layer": "boundaries",
+          filter: [
+            "all",
+            [">", ["to-number", ["get", "admin_level"]], 2],
+            ["!=", ["get", "maritime"], true]
+          ],
+          paint: {
+            "line-color": "#d0d9d2",
+            "line-width": 0.7
+          }
+        },
+        {
+          id: "country-boundaries",
+          type: "line",
+          source: "shortbread",
+          "source-layer": "boundaries",
+          filter: [
+            "all",
+            ["<=", ["to-number", ["get", "admin_level"]], 2],
+            ["!=", ["get", "maritime"], true]
+          ],
+          paint: {
+            "line-color": "#b7c5bd",
+            "line-width": 1
+          }
+        },
+        {
+          id: "country-labels",
+          type: "symbol",
+          source: "shortbread",
+          "source-layer": "boundary_labels",
+          filter: ["==", ["to-number", ["get", "admin_level"]], 2],
+          layout: {
+            "text-field": ["coalesce", ["get", "name_en"], ["get", "name"]],
+            "text-font": ["noto_sans_regular"],
+            "text-size": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              5, 10,
+              8, 13
+            ],
+            "text-letter-spacing": 0.12,
+            "text-transform": "uppercase",
+            "text-max-width": 10,
+            "text-padding": 4
+          },
+          paint: {
+            "text-color": "#7c8982",
+            "text-halo-color": "rgba(214, 231, 207, 0.85)",
+            "text-halo-width": 1.5,
+            "text-halo-blur": 0.5
+          }
         }
       ]
     }
   });
   map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
+  map.addControl(new AttributionControl({
+    compact: false,
+    customAttribution: "Village data dances.md"
+  }), "bottom-right");
   map.on("error", (event) => console.error("Basemap error:", event.error));
 
   const supportedLanguages = ["en", "el"];

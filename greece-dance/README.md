@@ -8,8 +8,9 @@ application and requires no build or deployment service.
   changes need no build step and no GitHub Action.
 - The browser renders localized village labels from the Markdown as an
   interactive map overlay.
-- The map renders a committed Natural Earth shaded-relief raster, so the
-  basemap works without a live map-tile service.
+- The map reads OpenStreetMap Shortbread vector tiles at runtime and renders
+  land, water, administrative boundaries and country names. It deliberately
+  omits provider city and village labels so the atlas labels remain prominent.
 
 The published app is:
 <https://charlieboardman.github.io/greece-dance/>
@@ -43,7 +44,8 @@ npm test
 ```
 
 There is no GitHub Action or deployment build. GitHub Pages serves the committed
-HTML, JavaScript, Markdown and map raster exactly as they are.
+HTML, JavaScript and Markdown exactly as they are. Map geography updates from
+OpenStreetMap at runtime.
 
 ## Region color palette
 
@@ -80,12 +82,11 @@ dances-markdown.js          dances.md validation and hierarchy parser
 region-presentation.js      Localized names and region sorting
 content/dances.md           Canonical content source
 content/README.md           Markdown editing guide
-assets/basemaps/            Static map raster and source notes
-scripts/                    One-off basemap preparation tool
 tests/                      Content/parser tests
 vendor/                     Browser libraries and their licenses
 ```
 
-Natural Earth supplies the public-domain shaded-relief basemap. MapLibre renders
-it, Marked renders village information sections, and DOMPurify sanitizes the
-resulting HTML. Library licenses are included in `vendor/`.
+OpenStreetMap supplies the live vector tiles and is credited in the map.
+MapLibre renders the basemap, Marked renders village information sections, and
+DOMPurify sanitizes the resulting HTML. Their licenses are included in
+`vendor/`.
