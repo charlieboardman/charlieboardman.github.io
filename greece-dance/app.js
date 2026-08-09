@@ -386,7 +386,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       .addTo(map);
     markerElement.addEventListener("click", () => selectVillage(village.id));
     markerElement.addEventListener("mouseenter", () => setMarkerState(village.id, true));
-    markerElement.addEventListener("mouseleave", () => setMarkerState(village.id, expandedVillages.has(village.id)));
+    markerElement.addEventListener("mouseleave", () => setMarkerState(village.id, isVillageExpandedAndVisible(village.id)));
     markerById.set(village.id, marker);
   });
   setMapLanguage(mapLanguage);
@@ -501,7 +501,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       const summary = details.querySelector(".tree-village-summary");
       details.addEventListener("toggle", () => updateVillageExpandedState(details));
       summary.addEventListener("mouseenter", () => setMarkerState(id, true));
-      summary.addEventListener("mouseleave", () => setMarkerState(id, expandedVillages.has(id)));
+      summary.addEventListener("mouseleave", () => setMarkerState(id, isVillageExpandedAndVisible(details)));
     });
     els.villageList.querySelectorAll(".tree-region").forEach((details) => {
       details.addEventListener("toggle", () => updateExpandedState(details, expandedRegions, normalized));
@@ -509,6 +509,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     els.villageList.querySelectorAll(".tree-subregion").forEach((details) => {
       details.addEventListener("toggle", () => updateExpandedState(details, expandedSubregions, normalized));
     });
+    syncVillageMarkerStates(els.villageList);
   }
 
   function filterRegion(region, query) {
@@ -598,16 +599,35 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   }
 
   function updateExpandedState(details, state, searching) {
-    if (searching) return;
-    if (details.open) state.add(details.dataset.folder);
-    else state.delete(details.dataset.folder);
+    if (!searching) {
+      if (details.open) state.add(details.dataset.folder);
+      else state.delete(details.dataset.folder);
+    }
+    syncVillageMarkerStates(details);
   }
 
   function updateVillageExpandedState(details) {
     const id = details.dataset.village;
     if (details.open) expandedVillages.add(id);
     else expandedVillages.delete(id);
-    setMarkerState(id, details.open);
+    setMarkerState(id, isVillageExpandedAndVisible(details));
+  }
+
+  function isVillageExpandedAndVisible(village) {
+    const details = typeof village === "string"
+      ? [...els.villageList.querySelectorAll(".tree-village")]
+        .find((item) => item.dataset.village === village)
+      : village;
+    if (!details?.open) return false;
+    const region = details.closest(".tree-region");
+    const subregion = details.closest(".tree-subregion");
+    return Boolean(region?.open && (!subregion || subregion.open));
+  }
+
+  function syncVillageMarkerStates(container) {
+    container.querySelectorAll(".tree-village").forEach((details) => {
+      setMarkerState(details.dataset.village, isVillageExpandedAndVisible(details));
+    });
   }
 
   function updatePanelTitle() {
