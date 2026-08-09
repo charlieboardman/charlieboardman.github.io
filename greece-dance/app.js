@@ -71,7 +71,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     regionTray: document.querySelector(".region-tray"),
     regionList: document.querySelector("#region-list"),
     villageList: document.querySelector("#village-list"),
-    villageDetail: document.querySelector("#village-detail"),
     panelTitle: document.querySelector("#panel-title"),
     search: document.querySelector("#village-search"),
     archive: document.querySelector("#archive-panel"),
@@ -239,8 +238,8 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     });
     if (hasRenderedAtlas) {
       renderRegions();
-      if (activeVillage) renderDetail(villageById.get(activeVillage));
-      else renderVillages(els.search.value);
+      updatePanelTitle();
+      renderVillages(els.search.value);
     }
     scheduleMapLabelLayout();
     try { localStorage.setItem("dance-atlas-language", language); } catch {}
@@ -277,9 +276,9 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const markerById = new Map();
   const expandedRegions = new Set();
   const expandedSubregions = new Set();
+  const expandedVillages = new Set();
   let activeRegion = null;
   let hoveredRegion = null;
-  let activeVillage = null;
   let hasRenderedAtlas = false;
 
   function markerDiameterAtZoom(zoom) {
@@ -387,7 +386,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       .addTo(map);
     markerElement.addEventListener("click", () => selectVillage(village.id));
     markerElement.addEventListener("mouseenter", () => setMarkerState(village.id, true));
-    markerElement.addEventListener("mouseleave", () => setMarkerState(village.id, activeVillage === village.id));
+    markerElement.addEventListener("mouseleave", () => setMarkerState(village.id, expandedVillages.has(village.id)));
     markerById.set(village.id, marker);
   });
   setMapLanguage(mapLanguage);
@@ -497,10 +496,12 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       ? visibleRegions.map((region) => renderRegionTree(region, Boolean(normalized))).join("")
       : `<p class="empty-state">No village records match that search.</p>`;
 
-    els.villageList.querySelectorAll(".tree-village").forEach((button) => {
-      button.addEventListener("click", () => selectVillage(button.dataset.village));
-      button.addEventListener("mouseenter", () => setMarkerState(button.dataset.village, true));
-      button.addEventListener("mouseleave", () => setMarkerState(button.dataset.village, activeVillage === button.dataset.village));
+    els.villageList.querySelectorAll(".tree-village").forEach((details) => {
+      const id = details.dataset.village;
+      const summary = details.querySelector(".tree-village-summary");
+      details.addEventListener("toggle", () => updateVillageExpandedState(details));
+      summary.addEventListener("mouseenter", () => setMarkerState(id, true));
+      summary.addEventListener("mouseleave", () => setMarkerState(id, expandedVillages.has(id)));
     });
     els.villageList.querySelectorAll(".tree-region").forEach((details) => {
       details.addEventListener("toggle", () => updateExpandedState(details, expandedRegions, normalized));
@@ -583,12 +584,16 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   }
 
   function renderVillageRow(village) {
+    const isOpen = expandedVillages.has(village.id);
     return `
-      <button class="tree-village ${activeVillage === village.id ? "is-active" : ""}" data-village="${escapeAttribute(village.id)}">
-        <span class="tree-village-dot" aria-hidden="true"></span>
-        <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(villageLabel(village))}</span>
-        <span class="village-arrow" aria-hidden="true">→</span>
-      </button>
+      <details class="tree-village" data-village="${escapeAttribute(village.id)}"${isOpen ? " open" : ""}>
+        <summary class="tree-summary tree-village-summary">
+          <span class="tree-chevron" aria-hidden="true">›</span>
+          <span class="tree-village-dot" aria-hidden="true"></span>
+          <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(villageLabel(village))}</span>
+        </summary>
+        <div class="tree-village-detail detail-copy" lang="${escapeAttribute(mapLanguage)}">${renderMarkdown(localizedInfo(village, mapLanguage))}</div>
+      </details>
     `;
   }
 
@@ -598,13 +603,22 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     else state.delete(details.dataset.folder);
   }
 
-  function renderDetail(village) {
-    els.villageDetail.innerHTML = `
-      <button class="detail-back" type="button">← Back to village index</button>
-      <h3 lang="${escapeAttribute(mapLanguage)}">${escapeHtml(villageLabel(village))}</h3>
-      <div class="detail-copy" lang="${escapeAttribute(mapLanguage)}">${renderMarkdown(localizedInfo(village, mapLanguage))}</div>
-    `;
-    els.villageDetail.querySelector(".detail-back").addEventListener("click", showList);
+  function updateVillageExpandedState(details) {
+    const id = details.dataset.village;
+    if (details.open) expandedVillages.add(id);
+    else expandedVillages.delete(id);
+    setMarkerState(id, details.open);
+  }
+
+  function updatePanelTitle() {
+    const selectedRegion = activeRegion
+      ? regions.find((region) => region.id === activeRegion)
+      : null;
+    const panelTitle = selectedRegion ? regionLabel(selectedRegion) : "";
+    els.panelTitle.textContent = panelTitle;
+    els.panelTitle.lang = mapLanguage;
+    els.panelTitle.hidden = !panelTitle;
+    els.archive.classList.toggle("has-panel-title", Boolean(panelTitle));
   }
 
   function setRegionSelection(id) {
@@ -615,6 +629,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       chip.classList.toggle("is-active", isActive);
       chip.setAttribute("aria-pressed", String(isActive));
     });
+    updatePanelTitle();
     updateRegionMarkerColors();
   }
 
@@ -644,18 +659,21 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     const village = villageById.get(id);
     if (!village) return;
     if (activeRegion) setRegionSelection(null);
-    if (activeVillage && activeVillage !== id) setMarkerState(activeVillage, false);
-    activeVillage = id;
-    setMarkerState(id, true);
-    renderDetail(village);
-    els.villageList.hidden = true;
-    els.villageDetail.hidden = false;
-    els.panelTitle.hidden = true;
-    els.archive.classList.add("is-detail");
-    setArchiveOpen(true);
-    if (mobileArchiveMedia.matches) {
-      requestAnimationFrame(() => els.villageDetail.querySelector(".detail-back")?.focus());
+    els.search.value = "";
+    expandedRegions.add(village.regionId);
+    if (village.subregionId) {
+      expandedSubregions.add(`${village.regionId}/${village.subregionId}`);
     }
+    expandedVillages.add(id);
+    setMarkerState(id, true);
+    renderVillages();
+    setArchiveOpen(true);
+    requestAnimationFrame(() => {
+      const details = [...els.villageList.querySelectorAll(".tree-village")]
+        .find((item) => item.dataset.village === id);
+      details?.scrollIntoView({ block: "nearest" });
+      if (mobileArchiveMedia.matches) details?.querySelector(".tree-village-summary")?.focus();
+    });
   }
 
   function setMarkerState(id, enabled) {
@@ -676,18 +694,13 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     return escapeHtml(value);
   }
 
+  function collapseVillageDetails() {
+    expandedVillages.forEach((id) => setMarkerState(id, false));
+    expandedVillages.clear();
+  }
+
   function showList() {
-    if (activeVillage) setMarkerState(activeVillage, false);
-    activeVillage = null;
-    els.villageDetail.hidden = true;
-    els.villageList.hidden = false;
-    els.archive.classList.remove("is-detail");
-    const selectedRegion = activeRegion ? regions.find((region) => region.id === activeRegion) : null;
-    const panelTitle = selectedRegion ? regionLabel(selectedRegion) : "";
-    els.panelTitle.textContent = panelTitle;
-    els.panelTitle.lang = mapLanguage;
-    els.panelTitle.hidden = !panelTitle;
-    els.archive.classList.toggle("has-panel-title", Boolean(panelTitle));
+    collapseVillageDetails();
     renderVillages(els.search.value);
   }
 
