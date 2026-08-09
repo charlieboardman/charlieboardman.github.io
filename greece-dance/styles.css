@@ -96,11 +96,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--coral); out
 .tree-region { border-bottom: 1px solid var(--line); }
 .tree-summary { display: grid; align-items: center; width: 100%; list-style: none; cursor: pointer; user-select: none; }
 .tree-summary::-webkit-details-marker { display: none; }
-.tree-region-summary { grid-template-columns: 20px minmax(0, 1fr) auto; gap: 7px; min-height: 52px; padding: 12px 3px 12px 0; font: 500 18px/1 "DM Sans", sans-serif; }
-.tree-subregion-summary { grid-template-columns: 20px minmax(0, 1fr) auto; gap: 7px; min-height: 43px; padding: 9px 3px 9px 18px; border-top: 1px solid rgba(23,39,37,.1); color: #44534f; font: 500 18px/1 "DM Sans", sans-serif; }
+.tree-region-summary { grid-template-columns: 30px minmax(0, 1fr) auto; gap: 7px; min-height: 52px; padding: 12px 3px 12px 0; font: 500 18px/1 "DM Sans", sans-serif; }
+.tree-subregion-summary { grid-template-columns: 30px minmax(0, 1fr) auto; gap: 7px; min-height: 43px; padding: 9px 3px 9px 18px; border-top: 1px solid rgba(23,39,37,.1); color: #44534f; font: 500 18px/1 "DM Sans", sans-serif; }
 .tree-summary:hover { background: rgba(255,255,255,.32); }
 .tree-summary:focus-visible { outline: 2px solid var(--coral); outline-offset: -2px; }
-.tree-chevron { color: #71807a; font-size: 22px; font-weight: 600; line-height: 1; transform-origin: center; transition: transform .16s ease; }
+.tree-chevron { color: #71807a; font-size: 33px; font-weight: 600; line-height: 1; transform-origin: center; transition: transform .16s ease; }
 details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 .tree-label { min-width: 0; overflow-wrap: anywhere; }
 .tree-region-children { padding-bottom: 5px; }
