@@ -31,6 +31,16 @@
           <div id="map"></div>
           <div class="map-wash" aria-hidden="true"></div>
 
+          <section class="village-info-popup" id="village-info-popup" role="dialog" aria-labelledby="village-info-title" hidden>
+            <button class="village-info-close" id="village-info-close" type="button" aria-label="Close village information">×</button>
+            <div class="village-info-scroll">
+              <p class="eyebrow" id="village-info-kind">Village</p>
+              <h2 id="village-info-title"></h2>
+              <p class="village-info-location" id="village-info-location"></p>
+              <div class="village-info-copy detail-copy" id="village-info-copy"></div>
+            </div>
+          </section>
+
           <button class="mobile-archive-button" id="mobile-archive-button" type="button" aria-controls="archive-panel" aria-expanded="false">
             Open archive <span id="mobile-count">00</span>
           </button>

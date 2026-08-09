@@ -78,7 +78,13 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     panelClose: document.querySelector("#panel-close"),
     homeButton: document.querySelector("#home-button"),
     languageOptions: document.querySelector("#language-options"),
-    skipLink: document.querySelector(".skip-link")
+    skipLink: document.querySelector(".skip-link"),
+    villageInfoPopup: document.querySelector("#village-info-popup"),
+    villageInfoClose: document.querySelector("#village-info-close"),
+    villageInfoKind: document.querySelector("#village-info-kind"),
+    villageInfoTitle: document.querySelector("#village-info-title"),
+    villageInfoLocation: document.querySelector("#village-info-location"),
+    villageInfoCopy: document.querySelector("#village-info-copy")
   };
 
   document.querySelector("#mobile-count").textContent = String(villages.length).padStart(2, "0");
@@ -209,6 +215,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const supportedLanguages = ["en", "el"];
   const interfaceLabels = {
     deselectAll: { en: "Deselect all", el: "Αποεπιλογή όλων" },
+    closeVillageInfo: { en: "Close village information", el: "Κλείσιμο πληροφοριών χωριού" },
     region: { en: "Region", el: "Περιοχή" },
     subregion: { en: "Subregion", el: "Υποπεριοχή" },
     village: { en: "Village", el: "Χωριό" }
@@ -246,6 +253,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     if (hasRenderedAtlas) {
       renderVillages(els.search.value);
     }
+    renderVillageInfoPopup();
     scheduleMapLabelLayout();
     try { localStorage.setItem("dance-atlas-language", language); } catch {}
   }
@@ -257,11 +265,11 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   const markerById = new Map();
   const expandedRegions = new Set();
   const expandedSubregions = new Set();
-  const expandedVillages = new Set();
   const highlightedVillages = new Set();
   const mapOpenedRegions = new Map();
   const mapOpenedSubregions = new Map();
-  const mapOpenedVillages = new Map();
+  let activeInfoVillageId = null;
+  let villageInfoReturnTarget = null;
   let hoveredTreeFolder = null;
   let hasRenderedAtlas = false;
 
@@ -479,13 +487,12 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
     hoveredTreeFolder = null;
     updateTreeFolderMarkerColors();
-    els.villageList.querySelectorAll(".tree-village").forEach((details) => {
-      const id = details.dataset.village;
-      const summary = details.querySelector(".tree-village-summary");
-      details.addEventListener("toggle", () => syncVillageMarkerStates(details));
-      summary.addEventListener("click", () => updateVillageCaretStateFromUser(details));
-      summary.addEventListener("mouseenter", () => setMarkerState(id, true));
-      summary.addEventListener("mouseleave", () => setMarkerState(id, isVillageHighlightedAndVisible(details)));
+    els.villageList.querySelectorAll(".tree-village").forEach((row) => {
+      const id = row.dataset.village;
+      const openButton = row.querySelector(".tree-village-open");
+      openButton.addEventListener("click", () => openVillageInfo(id, { returnTarget: "row" }));
+      openButton.addEventListener("mouseenter", () => setMarkerState(id, true));
+      openButton.addEventListener("mouseleave", () => setMarkerState(id, isVillageHighlightedAndVisible(row)));
     });
     els.villageList.querySelectorAll(".tree-region").forEach((details) => {
       const summary = details.querySelector(":scope > .tree-region-summary");
@@ -598,19 +605,16 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   }
 
   function renderVillageRow(village) {
-    const isOpen = expandedVillages.has(village.id) || mapOpenedVillages.has(village.id);
     const label = villageLabel(village);
     return `
-      <details class="tree-village" data-village="${escapeAttribute(village.id)}"${isOpen ? " open" : ""}>
-        <summary class="tree-summary tree-village-summary">
-          <span class="tree-chevron" aria-hidden="true">›</span>
+      <div class="tree-village${highlightedVillages.has(village.id) ? " is-selected" : ""}" data-village="${escapeAttribute(village.id)}">
+        <button class="tree-village-open" type="button" aria-haspopup="dialog" aria-controls="village-info-popup">
           <span class="tree-village-dot" aria-hidden="true"></span>
           <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
           <span class="tree-kind" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(interfaceLabel("village"))}</span>
-          <button class="tree-zoom" type="button" data-village="${escapeAttribute(village.id)}" aria-label="Zoom map to ${escapeAttribute(label)}">Zoom</button>
-        </summary>
-        <div class="tree-village-detail detail-copy" lang="${escapeAttribute(mapLanguage)}">${renderMarkdown(localizedInfo(village, mapLanguage))}</div>
-      </details>
+        </button>
+        <button class="tree-zoom" type="button" data-village="${escapeAttribute(village.id)}" aria-label="Zoom map to ${escapeAttribute(label)}">Zoom</button>
+      </div>
     `;
   }
 
@@ -625,51 +629,39 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     }
   }
 
-  function updateVillageCaretStateFromUser(details) {
-    const id = details.dataset.village;
-    if (details.open) {
-      expandedVillages.delete(id);
-      mapOpenedVillages.delete(id);
-      highlightedVillages.delete(id);
-    } else {
-      expandedVillages.add(id);
-      highlightedVillages.add(id);
-    }
-  }
-
-  function isVillageExpandedAndVisible(village) {
-    const details = typeof village === "string"
-      ? villageDetailsById(village)
+  function isVillageRowVisible(village) {
+    const row = typeof village === "string"
+      ? villageRowById(village)
       : village;
-    if (!details?.open) return false;
-    const region = details.closest(".tree-region");
-    const subregion = details.closest(".tree-subregion");
+    if (!row) return false;
+    const region = row.closest(".tree-region");
+    const subregion = row.closest(".tree-subregion");
     return Boolean(region?.open && (!subregion || subregion.open));
   }
 
   function isVillageHighlightedAndVisible(village) {
-    const details = typeof village === "string"
-      ? villageDetailsById(village)
+    const row = typeof village === "string"
+      ? villageRowById(village)
       : village;
     return Boolean(
-      details
-      && highlightedVillages.has(details.dataset.village)
-      && isVillageExpandedAndVisible(details)
+      row
+      && highlightedVillages.has(row.dataset.village)
+      && isVillageRowVisible(row)
     );
   }
 
-  function villageDetailsById(id) {
+  function villageRowById(id) {
     return [...els.villageList.querySelectorAll(".tree-village")]
       .find((item) => item.dataset.village === id);
   }
 
   function syncVillageMarkerStates(container) {
-    const villageDetails = [
+    const villageRows = [
       ...(container.matches?.(".tree-village") ? [container] : []),
       ...container.querySelectorAll(".tree-village")
     ];
-    villageDetails.forEach((details) => {
-      setMarkerState(details.dataset.village, isVillageHighlightedAndVisible(details));
+    villageRows.forEach((row) => {
+      setMarkerState(row.dataset.village, isVillageHighlightedAndVisible(row));
     });
   }
 
@@ -721,7 +713,6 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
         village.id
       );
     }
-    addMapCaretOwner(mapOpenedVillages, village.id, village.id);
   }
 
   function removeMapVillagePath(village) {
@@ -733,10 +724,69 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
         village.id
       );
     }
-    removeMapCaretOwner(mapOpenedVillages, village.id, village.id);
+  }
+
+  function renderVillageInfoPopup() {
+    const village = villageById.get(activeInfoVillageId);
+    if (!village) {
+      els.villageInfoPopup.hidden = true;
+      return;
+    }
+    const location = [
+      localizedName({ names: village.subregionNames }, mapLanguage),
+      localizedName({ names: village.regionNames }, mapLanguage)
+    ].filter(Boolean).join(" · ");
+    els.villageInfoKind.textContent = interfaceLabel("village");
+    els.villageInfoKind.lang = mapLanguage;
+    els.villageInfoTitle.textContent = villageLabel(village);
+    els.villageInfoTitle.lang = mapLanguage;
+    els.villageInfoLocation.textContent = location;
+    els.villageInfoLocation.lang = mapLanguage;
+    els.villageInfoLocation.hidden = !location;
+    els.villageInfoCopy.innerHTML = renderMarkdown(localizedInfo(village, mapLanguage));
+    els.villageInfoCopy.lang = mapLanguage;
+    els.villageInfoClose.setAttribute("aria-label", interfaceLabel("closeVillageInfo"));
+    els.villageInfoPopup.hidden = false;
+  }
+
+  function openVillageInfo(id, { returnTarget = "marker" } = {}) {
+    if (!villageById.has(id)) return;
+    activeInfoVillageId = id;
+    villageInfoReturnTarget = returnTarget;
+    highlightedVillages.add(id);
+    villageRowById(id)?.classList.add("is-selected");
+    setMarkerState(id, true);
+    renderVillageInfoPopup();
+    if (mobileArchiveMedia.matches) setArchiveOpen(false);
+    requestAnimationFrame(() => els.villageInfoClose.focus());
+  }
+
+  function closeVillageInfo({ deselect = true, restoreFocus = true } = {}) {
+    const id = activeInfoVillageId;
+    if (!id) return;
+    const returnTarget = villageInfoReturnTarget;
+    activeInfoVillageId = null;
+    villageInfoReturnTarget = null;
+    els.villageInfoPopup.hidden = true;
+    if (deselect) {
+      highlightedVillages.delete(id);
+      removeMapVillagePath(villageById.get(id));
+      setMarkerState(id, false);
+      renderVillages(els.search.value);
+    }
+    if (!restoreFocus) return;
+    requestAnimationFrame(() => {
+      const rowButton = villageRowById(id)?.querySelector(".tree-village-open");
+      const markerButton = markerById.get(id)?.getElement();
+      const target = returnTarget === "row" && !mobileArchiveMedia.matches
+        ? rowButton
+        : markerButton;
+      target?.focus();
+    });
   }
 
   function resetAtlas() {
+    closeVillageInfo({ deselect: false, restoreFocus: false });
     els.search.value = "";
     expandedRegions.clear();
     expandedSubregions.clear();
@@ -751,12 +801,16 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   function selectVillage(id) {
     const village = villageById.get(id);
     if (!village) return;
-    const details = villageDetailsById(id);
-    if (isVillageHighlightedAndVisible(details)) {
-      highlightedVillages.delete(id);
-      removeMapVillagePath(village);
-      renderVillages(els.search.value);
-      setMarkerState(id, false);
+    const row = villageRowById(id);
+    if (isVillageHighlightedAndVisible(row)) {
+      if (activeInfoVillageId === id) {
+        closeVillageInfo({ restoreFocus: false });
+      } else {
+        highlightedVillages.delete(id);
+        removeMapVillagePath(village);
+        renderVillages(els.search.value);
+        setMarkerState(id, false);
+      }
       setMarkerHoverSuppressed(id, true);
       return;
     }
@@ -765,11 +819,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     addMapVillagePath(village);
     setMarkerState(id, true);
     renderVillages();
-    setArchiveOpen(true);
     requestAnimationFrame(() => {
-      const openedDetails = villageDetailsById(id);
-      openedDetails?.scrollIntoView({ block: "nearest" });
-      if (mobileArchiveMedia.matches) openedDetails?.querySelector(".tree-village-summary")?.focus();
+      const openedRow = villageRowById(id);
+      openedRow?.scrollIntoView({ block: "nearest" });
+      openVillageInfo(id);
     });
   }
 
@@ -800,10 +853,11 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   }
 
   function collapseVillageDetails() {
+    activeInfoVillageId = null;
+    villageInfoReturnTarget = null;
+    els.villageInfoPopup.hidden = true;
     highlightedVillages.forEach((id) => setMarkerState(id, false));
     highlightedVillages.clear();
-    expandedVillages.clear();
-    mapOpenedVillages.clear();
     mapOpenedSubregions.clear();
     mapOpenedRegions.clear();
   }
@@ -856,6 +910,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   els.search.addEventListener("input", showList);
   els.homeButton.addEventListener("click", resetAtlas);
   els.deselectAll.addEventListener("click", resetAtlas);
+  els.villageInfoClose.addEventListener("click", () => closeVillageInfo());
   els.mobileArchive.addEventListener("click", () => setArchiveOpen(true, { focusSearch: true }));
   els.desktopArchive.addEventListener("click", () => {
     setArchiveOpen(els.atlas.classList.contains("is-archive-collapsed"));
@@ -868,6 +923,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   mobileArchiveMedia.addEventListener("change", handleArchiveBreakpointChange);
   syncArchiveAccessibility();
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && activeInfoVillageId) {
+      closeVillageInfo();
+      return;
+    }
     if (
       event.key === "Escape"
       && mobileArchiveMedia.matches
