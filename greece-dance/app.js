@@ -119,14 +119,14 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
         {
           id: "land-background",
           type: "background",
-          paint: { "background-color": "#edf2ec" }
+          paint: { "background-color": "#dce8d4" }
         },
         {
           id: "ocean",
           type: "fill",
           source: "shortbread",
           "source-layer": "ocean",
-          paint: { "fill-color": "#cfd9d5" }
+          paint: { "fill-color": "#b9d7e8" }
         },
         {
           id: "inland-water",
@@ -134,8 +134,8 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
           source: "shortbread",
           "source-layer": "water_polygons",
           paint: {
-            "fill-color": "#cfd9d5",
-            "fill-outline-color": "#c3d0ca"
+            "fill-color": "#b9d7e8",
+            "fill-outline-color": "#a8c8da"
           }
         },
         {
@@ -191,7 +191,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
           },
           paint: {
             "text-color": "#7c8982",
-            "text-halo-color": "rgba(237, 242, 236, 0.85)",
+            "text-halo-color": "rgba(220, 232, 212, 0.85)",
             "text-halo-width": 1.5,
             "text-halo-blur": 0.5
           }

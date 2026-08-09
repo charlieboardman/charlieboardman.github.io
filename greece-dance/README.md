@@ -58,7 +58,8 @@ Candidates must:
 - have OKLCH lightness from 0.56 to 0.76 and chroma from 0.13 to 0.28, keeping
   them bright and vivid;
 - maintain at least 3.5:1 contrast against the map's neutral black dots and
-  2.15:1 against the pale `#edf2ec` land color.
+  2.15:1 against the original pale `#edf2ec` land color used when the palette
+  was generated.
 
 A multi-start farthest-point search chooses the candidate whose nearest
 existing palette color is farthest away in OKLab at each step. The resulting
