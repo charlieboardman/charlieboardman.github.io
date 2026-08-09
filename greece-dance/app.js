@@ -119,7 +119,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
         {
           id: "land-background",
           type: "background",
-          paint: { "background-color": "#dce8d4" }
+          paint: { "background-color": "#d6e7cf" }
         },
         {
           id: "ocean",
@@ -191,7 +191,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
           },
           paint: {
             "text-color": "#7c8982",
-            "text-halo-color": "rgba(220, 232, 212, 0.85)",
+            "text-halo-color": "rgba(214, 231, 207, 0.85)",
             "text-halo-width": 1.5,
             "text-halo-blur": 0.5
           }

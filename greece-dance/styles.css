@@ -47,8 +47,8 @@ button { color: inherit; }
 
 .atlas { height: calc(100vh - var(--header-height)); height: calc(100dvh - var(--header-height)); min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-width); overflow: hidden; }
 .atlas.is-archive-collapsed { grid-template-columns: minmax(0, 1fr) 0; }
-.map-stage { position: relative; min-width: 0; background: #dce8d4; overflow: hidden; }
-#map { position: absolute; inset: 0; z-index: 1; background: #dce8d4; }
+.map-stage { position: relative; min-width: 0; background: #d6e7cf; overflow: hidden; }
+#map { position: absolute; inset: 0; z-index: 1; background: #d6e7cf; }
 .map-wash { position: absolute; inset: 0; z-index: 2; pointer-events: none; box-shadow: inset 0 0 100px rgba(14, 35, 31, .17); mix-blend-mode: multiply; }
 .maplibregl-map { font-family: "DM Sans", sans-serif; }
 .maplibregl-ctrl-attrib { margin-bottom: 0 !important; background: rgba(243,239,231,.82) !important; color: #53635f !important; font-size: 9px !important; }
