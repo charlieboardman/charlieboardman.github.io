@@ -70,6 +70,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     villageList: document.querySelector("#village-list"),
     panelTitle: document.querySelector("#panel-title"),
     search: document.querySelector("#village-search"),
+    deselectAll: document.querySelector("#deselect-all"),
     archive: document.querySelector("#archive-panel"),
     mobileArchive: document.querySelector("#mobile-archive-button"),
     desktopArchive: document.querySelector("#desktop-archive-toggle"),
@@ -205,6 +206,12 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   map.on("error", (event) => console.error("Basemap error:", event.error));
 
   const supportedLanguages = ["en", "el"];
+  const interfaceLabels = {
+    deselectAll: { en: "Deselect all", el: "Αποεπιλογή όλων" },
+    region: { en: "Region", el: "Περιοχή" },
+    subregion: { en: "Subregion", el: "Υποπεριοχή" },
+    village: { en: "Village", el: "Χωριό" }
+  };
   let mapLanguage = "en";
   try {
     const savedLanguage = localStorage.getItem("dance-atlas-language");
@@ -219,6 +226,8 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
       button.classList.toggle("is-active", button.dataset.language === language);
       button.setAttribute("aria-pressed", String(button.dataset.language === language));
     });
+    els.deselectAll.textContent = interfaceLabel("deselectAll");
+    els.deselectAll.lang = language;
     markerById.forEach((marker, villageId) => {
       const village = villageById.get(villageId);
       const label = villageLabel(village);
@@ -282,6 +291,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   function subregionLabel(subregion) {
     return localizedName(subregion, mapLanguage);
+  }
+
+  function interfaceLabel(key) {
+    return interfaceLabels[key]?.[mapLanguage] || interfaceLabels[key]?.en || "";
   }
 
   let labelLayoutFrame = null;
@@ -552,6 +565,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-swatch" aria-hidden="true"></span>
           <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
+          <span class="tree-kind" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(interfaceLabel("region"))}</span>
           <span class="tree-count" aria-label="${count} ${count === 1 ? "village" : "villages"}">${count}</span>
           <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" aria-label="Zoom map to ${escapeAttribute(label)}">Zoom</button>
         </summary>
@@ -573,6 +587,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
         <summary class="tree-summary tree-subregion-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
+          <span class="tree-kind" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(interfaceLabel("subregion"))}</span>
           <span class="tree-count" aria-label="${subregion.villages.length} ${subregion.villages.length === 1 ? "village" : "villages"}">${subregion.villages.length}</span>
           <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" data-subregion="${escapeAttribute(subregion.id)}" aria-label="Zoom map to ${escapeAttribute(label)}">Zoom</button>
         </summary>
@@ -590,6 +605,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-village-dot" aria-hidden="true"></span>
           <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
+          <span class="tree-kind" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(interfaceLabel("village"))}</span>
           <button class="tree-zoom" type="button" data-village="${escapeAttribute(village.id)}" aria-label="Zoom map to ${escapeAttribute(label)}">Zoom</button>
         </summary>
         <div class="tree-village-detail detail-copy" lang="${escapeAttribute(mapLanguage)}">${renderMarkdown(localizedInfo(village, mapLanguage))}</div>
@@ -719,8 +735,14 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     removeMapCaretOwner(mapOpenedVillages, village.id, village.id);
   }
 
-  function goHome() {
-    showList();
+  function resetAtlas() {
+    els.search.value = "";
+    expandedRegions.clear();
+    expandedSubregions.clear();
+    collapseVillageDetails();
+    hoveredTreeFolder = null;
+    updateTreeFolderMarkerColors();
+    renderVillages();
     fitHomeView();
   }
 
@@ -830,7 +852,8 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
   }
 
   els.search.addEventListener("input", showList);
-  els.homeButton.addEventListener("click", goHome);
+  els.homeButton.addEventListener("click", resetAtlas);
+  els.deselectAll.addEventListener("click", resetAtlas);
   els.mobileArchive.addEventListener("click", () => setArchiveOpen(true, { focusSearch: true }));
   els.desktopArchive.addEventListener("click", () => {
     setArchiveOpen(els.atlas.classList.contains("is-archive-collapsed"));
