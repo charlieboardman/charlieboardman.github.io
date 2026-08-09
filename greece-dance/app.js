@@ -71,6 +71,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     panelTitle: document.querySelector("#panel-title"),
     search: document.querySelector("#village-search"),
     deselectAll: document.querySelector("#deselect-all"),
+    panelScroll: document.querySelector(".panel-scroll"),
     archive: document.querySelector("#archive-panel"),
     mobileArchive: document.querySelector("#mobile-archive-button"),
     desktopArchive: document.querySelector("#desktop-archive-toggle"),
@@ -743,6 +744,7 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     hoveredTreeFolder = null;
     updateTreeFolderMarkerColors();
     renderVillages();
+    els.panelScroll.scrollTop = 0;
     fitHomeView();
   }
 

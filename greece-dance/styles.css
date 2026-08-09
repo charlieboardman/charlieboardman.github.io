@@ -97,7 +97,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--coral); out
 details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 .tree-swatch { width: 8px; height: 8px; border-radius: 50%; background: var(--region-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--region-color) 16%, transparent); }
 .tree-label { min-width: 0; overflow-wrap: anywhere; }
-.tree-kind { justify-self: start; border: 1px solid rgba(23,39,37,.18); padding: 3px 4px 2px; color: #7a8782; font-size: 7px; font-weight: 600; line-height: 1; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
+.tree-kind { justify-self: start; color: #7a8782; font-size: 7px; font-weight: 600; line-height: 1; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
 .tree-count { justify-self: end; min-width: 22px; color: #7a8782; font-size: 9px; font-weight: 500; text-align: right; }
 .tree-region-children { padding-bottom: 5px; }
 .tree-region-villages { margin-left: 16px; border-left: 1px solid rgba(23,39,37,.12); }
