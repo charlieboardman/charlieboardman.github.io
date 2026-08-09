@@ -7,5 +7,5 @@
     "dev": "python3 -m http.server 8000",
     "test": "node --test"
   },
-  "description": "A no-build static Dance Atlas with live OpenStreetMap vector tiles"
+  "description": "A no-build static Dance Atlas with a Natural Earth basemap"
 }
