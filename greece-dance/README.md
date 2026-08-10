@@ -8,8 +8,8 @@ application and requires no build or deployment service.
   changes need no build step and no GitHub Action.
 - The browser renders localized village labels from the Markdown as an
   interactive map overlay.
-- The map renders committed ETOPO 2022 shaded-relief textures with Natural
-  Earth coastlines, lakes, and rivers. It needs no live map-tile service.
+- The map renders a committed 3 arc-second SRTM land-relief tile archive with
+  Natural Earth lakes and rivers. It needs no live map-tile service.
 
 The published app is:
 <https://charlieboardman.github.io/greece-dance/>
@@ -23,8 +23,8 @@ and editing guide are in [`content/README.md`](content/README.md).
 
 ## Previewing locally
 
-Requirements: Python 3 for the local web server, plus Node.js 20 or newer and
-npm for the test command and npm shortcuts.
+Requirements: Python 3 for the included byte-range-capable local web server,
+plus Node.js 20 or newer and npm for the test command and npm shortcuts.
 
 ```bash
 npm run dev
@@ -86,6 +86,7 @@ tests/                      Content/parser tests
 vendor/                     Browser libraries and their licenses
 ```
 
-ETOPO 2022 and Natural Earth supply the public-domain basemap data. MapLibre
-renders it, Marked renders village information sections, and DOMPurify sanitizes
-the resulting HTML. Library licenses are included in `vendor/`.
+NASA SRTM and Natural Earth supply the public-domain basemap data. MapLibre
+renders it through the bundled PMTiles reader, Marked renders village
+information sections, and DOMPurify sanitizes the resulting HTML. Library
+licenses are included in `vendor/`.

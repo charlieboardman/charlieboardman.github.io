@@ -6,6 +6,7 @@ import {
   sortRegionsAlphabetically
 } from "./region-presentation.js";
 import {
+  addProtocol,
   Map as MapLibreMap,
   Marker,
   NavigationControl,
@@ -13,6 +14,8 @@ import {
 } from "./vendor/maplibre-gl.mjs";
 
 setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
+const pmtilesProtocol = new window.pmtiles.Protocol();
+addProtocol("pmtiles", pmtilesProtocol.tile);
 
 (async () => {
   let regions = [];
@@ -87,24 +90,10 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
 
   document.querySelector("#mobile-count").textContent = String(villages.length).padStart(2, "0");
 
-  const etopoBasemapSegments = [
-    {
-      id: "west",
-      url: new URL(
-        "./assets/basemaps/etopo-2022-hydrography/etopo-2022-hydrography-12e-25e-34n-44n.webp",
-        import.meta.url
-      ).href,
-      coordinates: [[12, 44], [25, 44], [25, 34], [12, 34]]
-    },
-    {
-      id: "east",
-      url: new URL(
-        "./assets/basemaps/etopo-2022-hydrography/etopo-2022-hydrography-25e-38e-34n-44n.webp",
-        import.meta.url
-      ).href,
-      coordinates: [[25, 44], [38, 44], [38, 34], [25, 34]]
-    }
-  ];
+  const reliefArchiveUrl = new URL(
+    "./assets/basemaps/srtm-relief/greece-srtm-relief.pmtiles",
+    import.meta.url
+  ).href;
   const navigationBounds = { south: 34, west: 12, north: 44, east: 38 };
   const homeViewBounds = expandedVillageBounds(villages);
   const compactMapView = window.matchMedia("(max-width: 720px)").matches;
@@ -125,26 +114,26 @@ setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
     pitchWithRotate: false,
     style: {
       version: 8,
-      sources: Object.fromEntries(etopoBasemapSegments.map((segment) => [
-        `etopo-${segment.id}`,
-        {
-          type: "image",
-          url: segment.url,
-          coordinates: segment.coordinates
+      sources: {
+        "srtm-relief": {
+          type: "raster",
+          url: `pmtiles://${reliefArchiveUrl}`,
+          tileSize: 256,
+          attribution: ""
         }
-      ])),
+      },
       layers: [
         {
           id: "basemap-background",
           type: "background",
           paint: { "background-color": "#b4d8e9" }
         },
-        ...etopoBasemapSegments.map((segment) => ({
-          id: `etopo-${segment.id}`,
+        {
+          id: "srtm-relief",
           type: "raster",
-          source: `etopo-${segment.id}`,
+          source: "srtm-relief",
           paint: { "raster-resampling": "linear" }
-        }))
+        }
       ]
     }
   });
