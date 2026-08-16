@@ -143,7 +143,9 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
   const supportedLanguages = ["en", "el"];
   const interfaceLabels = {
     deselectAll: { en: "Deselect all", el: "Αποεπιλογή όλων" },
-    closeVillageInfo: { en: "Close village information", el: "Κλείσιμο πληροφοριών χωριού" }
+    closeVillageInfo: { en: "Close village information", el: "Κλείσιμο πληροφοριών χωριού" },
+    copyName: { en: "Copy", el: "Αντιγραφή" },
+    copiedName: { en: "Copied", el: "Αντιγράφηκε" }
   };
   let mapLanguage = "en";
   try {
@@ -446,6 +448,24 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
         zoomToTreeItem(button);
       });
     });
+    els.villageList.querySelectorAll(".tree-copy").forEach((button) => {
+      button.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const name = button.dataset.copyName || "";
+        try {
+          await writeClipboardText(name);
+          button.classList.add("is-copied");
+          button.setAttribute("aria-label", `${interfaceLabel("copiedName")}: ${name}`);
+          window.setTimeout(() => {
+            button.classList.remove("is-copied");
+            button.setAttribute("aria-label", copyButtonLabel(name));
+          }, 1200);
+        } catch (error) {
+          console.error("Could not copy place name:", error);
+        }
+      });
+    });
     syncVillageMarkerStates(els.villageList);
   }
 
@@ -495,7 +515,10 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
         <summary class="tree-summary tree-region-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
-          <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
+          <span class="tree-actions">
+            <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
+            ${renderCopyButton(label)}
+          </span>
         </summary>
         <div class="tree-region-children">
           ${region.villages.length ? `<div class="tree-region-villages">${region.villages.map(renderVillageRow).join("")}</div>` : ""}
@@ -515,7 +538,10 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
         <summary class="tree-summary tree-subregion-summary">
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
-          <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" data-subregion="${escapeAttribute(subregion.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
+          <span class="tree-actions">
+            <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" data-subregion="${escapeAttribute(subregion.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
+            ${renderCopyButton(label)}
+          </span>
         </summary>
         <div class="tree-villages">${subregion.villages.map(renderVillageRow).join("") || '<p class="tree-empty">No village records yet</p>'}</div>
       </details>
@@ -530,9 +556,41 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
           <span class="tree-village-dot" aria-hidden="true"></span>
           <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
         </button>
-        <button class="tree-zoom" type="button" data-village="${escapeAttribute(village.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
+        <span class="tree-actions">
+          <button class="tree-zoom" type="button" data-village="${escapeAttribute(village.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
+          ${renderCopyButton(label)}
+        </span>
       </div>
     `;
+  }
+
+  function renderCopyButton(name) {
+    return `<button class="tree-copy" type="button" data-copy-name="${escapeAttribute(name)}" aria-label="${escapeAttribute(copyButtonLabel(name))}"><span aria-hidden="true">🗐</span></button>`;
+  }
+
+  function copyButtonLabel(name) {
+    return `${interfaceLabel("copyName")}: ${name}`;
+  }
+
+  async function writeClipboardText(value) {
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return;
+      } catch {}
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.append(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    if (!copied) throw new Error("The browser rejected the clipboard request.");
   }
 
   function updateCaretStateFromUser(details, state, mapOpenedState, searching) {
