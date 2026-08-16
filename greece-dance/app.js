@@ -516,8 +516,8 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
           <span class="tree-actions">
-            <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
             ${renderCopyButton(label)}
+            <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
           </span>
         </summary>
         <div class="tree-region-children">
@@ -539,8 +539,8 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
           <span class="tree-chevron" aria-hidden="true">›</span>
           <span class="tree-label" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
           <span class="tree-actions">
-            <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" data-subregion="${escapeAttribute(subregion.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
             ${renderCopyButton(label)}
+            <button class="tree-zoom" type="button" data-region="${escapeAttribute(region.id)}" data-subregion="${escapeAttribute(subregion.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
           </span>
         </summary>
         <div class="tree-villages">${subregion.villages.map(renderVillageRow).join("") || '<p class="tree-empty">No village records yet</p>'}</div>
@@ -557,8 +557,8 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
           <span class="village-name" lang="${escapeAttribute(mapLanguage)}">${escapeHtml(label)}</span>
         </button>
         <span class="tree-actions">
-          <button class="tree-zoom" type="button" data-village="${escapeAttribute(village.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
           ${renderCopyButton(label)}
+          <button class="tree-zoom" type="button" data-village="${escapeAttribute(village.id)}" aria-label="Zoom map to ${escapeAttribute(label)}"><span class="tree-zoom-icon" aria-hidden="true"></span></button>
         </span>
       </div>
     `;
