@@ -447,7 +447,10 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
     els.villageList.querySelectorAll(".tree-village").forEach((row) => {
       const id = row.dataset.village;
       const openButton = row.querySelector(".tree-village-open");
-      openButton.addEventListener("click", () => openVillageInfo(id, { returnTarget: "row" }));
+      openButton.addEventListener("click", (event) => {
+        if (event.detail && selectedTextIntersects(openButton)) return;
+        openVillageInfo(id, { returnTarget: "row" });
+      });
       openButton.addEventListener("mouseenter", () => setMarkerState(id, true));
       openButton.addEventListener("mouseleave", () => setMarkerState(id, isVillageHighlightedAndVisible(row)));
     });
@@ -455,6 +458,7 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
       const summary = details.querySelector(":scope > .tree-region-summary");
       const folder = details.dataset.folder;
       details.addEventListener("toggle", () => syncVillageMarkerStates(details));
+      makeTreeLabelSelectable(summary);
       summary.addEventListener("click", () => {
         updateCaretStateFromUser(details, expandedRegions, mapOpenedRegions, Boolean(normalized));
       });
@@ -465,6 +469,7 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
       const summary = details.querySelector(":scope > .tree-subregion-summary");
       const folder = details.dataset.folder;
       details.addEventListener("toggle", () => syncVillageMarkerStates(details));
+      makeTreeLabelSelectable(summary);
       summary.addEventListener("click", () => {
         updateCaretStateFromUser(details, expandedSubregions, mapOpenedSubregions, Boolean(normalized));
       });
@@ -490,13 +495,31 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
           window.setTimeout(() => {
             button.classList.remove("is-copied");
             button.setAttribute("aria-label", copyButtonLabel(name));
-          }, 1200);
+          }, 1500);
         } catch (error) {
           console.error("Could not copy place name:", error);
         }
       });
     });
     syncVillageMarkerStates(els.villageList);
+  }
+
+  function makeTreeLabelSelectable(summary) {
+    const label = summary.querySelector(".tree-label");
+    label.addEventListener("click", (event) => {
+      if (!event.detail || !selectedTextIntersects(label)) return;
+      event.preventDefault();
+      event.stopPropagation();
+    });
+  }
+
+  function selectedTextIntersects(element) {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.toString()) return false;
+    for (let index = 0; index < selection.rangeCount; index += 1) {
+      if (selection.getRangeAt(index).intersectsNode(element)) return true;
+    }
+    return false;
   }
 
   function filterRegion(region, query) {
@@ -595,7 +618,7 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
   }
 
   function renderCopyButton(name) {
-    return `<button class="tree-copy" type="button" data-copy-name="${escapeAttribute(name)}" aria-label="${escapeAttribute(copyButtonLabel(name))}"><span aria-hidden="true">🗐</span></button>`;
+    return `<button class="tree-copy" type="button" data-copy-name="${escapeAttribute(name)}" data-copied-label="${escapeAttribute(interfaceLabel("copiedName"))}" aria-label="${escapeAttribute(copyButtonLabel(name))}"><span aria-hidden="true">🗐</span></button>`;
   }
 
   function copyButtonLabel(name) {

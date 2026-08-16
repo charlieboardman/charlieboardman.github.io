@@ -108,6 +108,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--coral); out
 .tree-chevron { color: #71807a; font-size: 33px; font-weight: 600; line-height: 1; transform-origin: center; transition: transform .16s ease; }
 details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 .tree-label { min-width: 0; overflow-wrap: anywhere; }
+.tree-label, .village-name { cursor: text; -webkit-user-select: text; user-select: text; }
 .tree-region-children { padding-bottom: 5px; }
 .tree-region-villages { margin-left: 16px; border-left: 1px solid rgba(23,39,37,.12); }
 .tree-region-villages .tree-village { width: calc(100% - 12px); margin-left: 12px; }
@@ -123,7 +124,9 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 .tree-actions { align-self: center; justify-self: end; display: flex; gap: 4px; margin-right: 3px; }
 .tree-zoom, .tree-copy { display: grid; place-items: center; width: 25px; height: 25px; border: 1px solid rgba(23,39,37,.28); padding: 1px; background: transparent; color: #63716c; transition: background .16s ease, border-color .16s ease, color .16s ease; }
 .tree-zoom { cursor: zoom-in; }
-.tree-copy { cursor: copy; font: 18px/1 "Segoe UI Symbol", "Noto Sans Symbols 2", sans-serif; }
+.tree-copy { position: relative; cursor: copy; font: 18px/1 "Segoe UI Symbol", "Noto Sans Symbols 2", sans-serif; }
+.tree-copy::after { content: attr(data-copied-label); position: absolute; z-index: 5; top: 50%; right: calc(100% + 7px); visibility: hidden; padding: 5px 7px; background: var(--ink); color: var(--white); font: 600 9px/1 "DM Sans", sans-serif; letter-spacing: .03em; white-space: nowrap; opacity: 0; pointer-events: none; transform: translate(4px, -50%); transition: opacity .14s ease, transform .14s ease, visibility 0s linear .14s; }
+.tree-copy.is-copied::after { visibility: visible; opacity: 1; transform: translate(0, -50%); transition-delay: 0s; }
 .tree-zoom:hover, .tree-copy:hover, .tree-copy.is-copied { border-color: var(--ink); background: var(--ink); color: var(--white); }
 .tree-zoom-icon { display: block; width: 21px; height: 21px; background: currentColor; -webkit-mask: url("./assets/map-pin.svg") center / contain no-repeat; mask: url("./assets/map-pin.svg") center / contain no-repeat; }
 .tree-empty { margin: 0; padding: 12px 0 14px 34px; color: #7a8782; font-size: 10px; }
