@@ -164,10 +164,10 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
   map.on("error", (event) => console.error("Basemap error:", event.error));
 
   const interfaceLabels = {
-    deselectAll: { en: "Deselect all", el: "Αποεπιλογή όλων" },
-    closeVillageInfo: { en: "Close village information", el: "Κλείσιμο πληροφοριών χωριού" },
-    copyName: { en: "Copy", el: "Αντιγραφή" },
-    copiedName: { en: "Copied", el: "Αντιγράφηκε" }
+    deselectAll: "Deselect all",
+    closeVillageInfo: "Close village information",
+    copyName: "Copy",
+    copiedName: "Copied"
   };
 
   function setMapLanguage(language) {
@@ -180,7 +180,6 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
       button.setAttribute("aria-pressed", String(button.dataset.language === language));
     });
     els.deselectAll.textContent = interfaceLabel("deselectAll");
-    els.deselectAll.lang = language;
     markerById.forEach((marker, villageId) => {
       const village = villageById.get(villageId);
       const label = villageLabel(village);
@@ -260,7 +259,7 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
   }
 
   function interfaceLabel(key) {
-    return interfaceLabels[key]?.[mapLanguage] || interfaceLabels[key]?.en || "";
+    return interfaceLabels[key] || "";
   }
 
   let labelLayoutFrame = null;
