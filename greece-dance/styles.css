@@ -108,7 +108,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--coral); out
 .tree-chevron { color: #71807a; font-size: 33px; font-weight: 600; line-height: 1; transform-origin: center; transition: transform .16s ease; }
 details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
 .tree-label { min-width: 0; overflow-wrap: anywhere; }
-.tree-label, .village-name { cursor: text; -webkit-user-select: text; user-select: text; }
+.tree-label, .village-name { margin-inline: -6px; padding-inline: 6px; cursor: text; -webkit-user-select: text; user-select: text; }
 .tree-region-children { padding-bottom: 5px; }
 .tree-region-villages { margin-left: 16px; border-left: 1px solid rgba(23,39,37,.12); }
 .tree-region-villages .tree-village { width: calc(100% - 12px); margin-left: 12px; }
