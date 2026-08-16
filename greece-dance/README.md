@@ -8,8 +8,8 @@ application and requires no build or deployment service.
   changes need no build step and no GitHub Action.
 - The browser renders localized village labels from the Markdown as an
   interactive map overlay.
-- The map renders a committed 3 arc-second SRTM land-relief tile archive with
-  Natural Earth lakes and rivers. It needs no live map-tile service.
+- The map selector offers SRTM land relief, ETOPO land-and-sea relief, and a
+  live OpenStreetMap boundary view. The two relief maps are committed locally.
 
 The published app is:
 <https://charlieboardman.github.io/greece-dance/>
@@ -76,17 +76,19 @@ valuable than a small global improvement after each edit.
 ```text
 index.html                  Static application
 app.js                      Browser UI and map
+map-styles.js               Terrain, land-and-sea, and boundary map styles
 dances-markdown.js          dances.md validation and hierarchy parser
 region-presentation.js      Localized names and region sorting
 content/dances.md           Canonical content source
 content/README.md           Markdown editing guide
-assets/basemaps/            Static map textures and source notes
-scripts/                    One-off basemap preparation tool
+assets/basemaps/            Static SRTM and ETOPO maps with source notes
+scripts/                    One-off basemap preparation tools
 tests/                      Content/parser tests
 vendor/                     Browser libraries and their licenses
 ```
 
-NASA SRTM and Natural Earth supply the public-domain basemap data. MapLibre
-renders it through the bundled PMTiles reader, Marked renders village
+NASA SRTM, NOAA ETOPO, and Natural Earth supply the public-domain relief-map
+data. OpenStreetMap supplies the live boundary view. MapLibre renders all three
+options, using the bundled PMTiles reader for SRTM; Marked renders village
 information sections, and DOMPurify sanitizes the resulting HTML. Library
 licenses are included in `vendor/`.

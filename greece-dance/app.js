@@ -6,7 +6,13 @@ import {
   sortRegionsAlphabetically
 } from "./region-presentation.js";
 import {
+  boundaryLabelExpression,
+  createMapStyle,
+  MAP_OPTIONS
+} from "./map-styles.js";
+import {
   addProtocol,
+  AttributionControl,
   Map as MapLibreMap,
   Marker,
   NavigationControl,
@@ -79,6 +85,7 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
     desktopArchive: document.querySelector("#desktop-archive-toggle"),
     panelClose: document.querySelector("#panel-close"),
     homeButton: document.querySelector("#home-button"),
+    mapOption: document.querySelector("#map-option"),
     languageOptions: document.querySelector("#language-options"),
     skipLink: document.querySelector(".skip-link"),
     villageInfoPopup: document.querySelector("#village-info-popup"),
@@ -94,6 +101,24 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
     "./assets/basemaps/srtm-relief/greece-srtm-relief.pmtiles",
     import.meta.url
   ).href;
+  const etopoBasemapSegments = [
+    {
+      id: "west",
+      url: new URL(
+        "./assets/basemaps/etopo-2022-hydrography/etopo-2022-hydrography-12e-25e-34n-44n.webp",
+        import.meta.url
+      ).href,
+      coordinates: [[12, 44], [25, 44], [25, 34], [12, 34]]
+    },
+    {
+      id: "east",
+      url: new URL(
+        "./assets/basemaps/etopo-2022-hydrography/etopo-2022-hydrography-25e-38e-34n-44n.webp",
+        import.meta.url
+      ).href,
+      coordinates: [[25, 44], [38, 44], [38, 34], [25, 34]]
+    }
+  ];
   const navigationBounds = { south: 34, west: 12, north: 44, east: 38 };
   const homeViewBounds = expandedVillageBounds(villages);
   const compactMapView = window.matchMedia("(max-width: 720px)").matches;
@@ -102,6 +127,26 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
   const maxMapZoom = 11;
   const minimumMarkerDiameter = 9;
   const maximumMarkerDiameter = 18;
+  const supportedLanguages = ["en", "el"];
+  const supportedMapOptions = new Set(MAP_OPTIONS.map((option) => option.id));
+  let mapLanguage = "en";
+  let selectedMapOption = "terrain";
+  try {
+    const savedLanguage = localStorage.getItem("dance-atlas-language");
+    const savedMapOption = localStorage.getItem("dance-atlas-map-option");
+    if (supportedLanguages.includes(savedLanguage)) mapLanguage = savedLanguage;
+    if (supportedMapOptions.has(savedMapOption)) selectedMapOption = savedMapOption;
+  } catch {}
+
+  function selectedMapStyle() {
+    return createMapStyle(selectedMapOption, {
+      language: mapLanguage,
+      terrainUrl: reliefArchiveUrl,
+      landSeaSegments: etopoBasemapSegments,
+      bounds: navigationBounds
+    });
+  }
+
   const map = new MapLibreMap({
     container: "map",
     center: [26.1, 39.25],
@@ -112,49 +157,22 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
     renderWorldCopies: false,
     dragRotate: false,
     pitchWithRotate: false,
-    style: {
-      version: 8,
-      sources: {
-        "srtm-relief": {
-          type: "raster",
-          url: `pmtiles://${reliefArchiveUrl}`,
-          tileSize: 256,
-          attribution: ""
-        }
-      },
-      layers: [
-        {
-          id: "basemap-background",
-          type: "background",
-          paint: { "background-color": "#b4d8e9" }
-        },
-        {
-          id: "srtm-relief",
-          type: "raster",
-          source: "srtm-relief",
-          paint: { "raster-resampling": "linear" }
-        }
-      ]
-    }
+    style: selectedMapStyle()
   });
   map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
+  map.addControl(new AttributionControl({ compact: false }), "bottom-right");
   map.on("error", (event) => console.error("Basemap error:", event.error));
 
-  const supportedLanguages = ["en", "el"];
   const interfaceLabels = {
     deselectAll: { en: "Deselect all", el: "Αποεπιλογή όλων" },
     closeVillageInfo: { en: "Close village information", el: "Κλείσιμο πληροφοριών χωριού" },
     copyName: { en: "Copy", el: "Αντιγραφή" },
     copiedName: { en: "Copied", el: "Αντιγράφηκε" }
   };
-  let mapLanguage = "en";
-  try {
-    const savedLanguage = localStorage.getItem("dance-atlas-language");
-    if (supportedLanguages.includes(savedLanguage)) mapLanguage = savedLanguage;
-  } catch {}
 
   function setMapLanguage(language) {
     if (!supportedLanguages.includes(language)) return;
+    const languageChanged = language !== mapLanguage;
     mapLanguage = language;
     regions = sortRegionsAlphabetically(regions, language);
     els.languageOptions.querySelectorAll(".language-button").forEach((button) => {
@@ -181,12 +199,24 @@ addProtocol("pmtiles", pmtilesProtocol.tile);
       renderVillages(els.search.value);
     }
     renderVillageInfoPopup();
+    if (languageChanged && selectedMapOption === "boundaries" && map.getLayer("country-labels")) {
+      map.setLayoutProperty("country-labels", "text-field", boundaryLabelExpression(language));
+    }
     scheduleMapLabelLayout();
     try { localStorage.setItem("dance-atlas-language", language); } catch {}
   }
 
   els.languageOptions.querySelectorAll(".language-button").forEach((button) => {
     button.addEventListener("click", () => setMapLanguage(button.dataset.language));
+  });
+
+  els.mapOption.value = selectedMapOption;
+  els.mapOption.addEventListener("change", () => {
+    const option = els.mapOption.value;
+    if (!supportedMapOptions.has(option) || option === selectedMapOption) return;
+    selectedMapOption = option;
+    map.setStyle(selectedMapStyle());
+    try { localStorage.setItem("dance-atlas-map-option", option); } catch {}
   });
 
   const markerById = new Map();

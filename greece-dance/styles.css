@@ -38,7 +38,12 @@ button { color: inherit; }
 .brand-home-button { background: transparent; color: inherit; cursor: pointer; transition: background .18s ease, border-color .18s ease; }
 .brand-home-button:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.8); }
 .brand-name { margin: 0; font-family: "Gloock", serif; font-size: 25px; font-weight: 400; letter-spacing: -.02em; white-space: nowrap; }
-.language-options { align-self: stretch; display: flex; margin-left: auto; border-right: 1px solid rgba(255,255,255,.2); border-left: 1px solid rgba(255,255,255,.2); }
+.map-option-control { align-self: stretch; display: flex; align-items: center; gap: 8px; margin-left: auto; padding: 0 14px; border-left: 1px solid rgba(255,255,255,.2); color: rgba(255,253,248,.72); font-size: 8px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+.map-option-control select { min-width: 104px; border: 1px solid rgba(255,255,255,.38); border-radius: 0; padding: 6px 24px 6px 8px; background: rgba(23,39,37,.16); color: var(--white); outline: 0; cursor: pointer; font-size: 9px; letter-spacing: 0; text-transform: none; }
+.map-option-control select:hover { border-color: rgba(255,255,255,.75); background: rgba(23,39,37,.24); }
+.map-option-control select:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
+.map-option-control option { background: var(--paper); color: var(--ink); }
+.language-options { align-self: stretch; display: flex; border-right: 1px solid rgba(255,255,255,.2); border-left: 1px solid rgba(255,255,255,.2); }
 .language-button { position: relative; border: 0; border-left: 1px solid rgba(255,255,255,.14); padding: 0 17px; background: transparent; color: rgba(255,253,248,.72); cursor: pointer; font-size: 9px; font-weight: 500; transition: background .18s ease, color .18s ease; }
 .language-button:first-child { border-left: 0; }
 .language-button:hover { background: rgba(255,255,255,.1); color: var(--white); }
@@ -155,6 +160,9 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
   .site-header { gap: 10px; padding: 0 12px 0 17px; }
   .brand-mark { min-width: 52px; height: 28px; }
   .brand-name { min-width: 0; font-size: 14px; line-height: .95; white-space: normal; }
+  .map-option-control { gap: 0; padding: 0 7px; }
+  .map-option-control > span { display: none; }
+  .map-option-control select { min-width: 82px; width: 82px; padding: 6px 18px 6px 6px; font-size: 8px; }
   .language-options { flex: none; }
   .language-button { padding: 0 10px; font-size: 8px; }
   .language-button.is-active::after { left: 7px; right: 7px; bottom: 6px; }
@@ -180,6 +188,10 @@ details[open] > .tree-summary .tree-chevron { transform: rotate(90deg); }
   .panel-actions { margin: 0 20px 14px; }
   .panel-scroll { padding: 0 20px 25px; }
   .tree-region-summary { min-height: 50px; }
+}
+
+@media (max-width: 480px) {
+  .brand-name { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
